@@ -38,49 +38,74 @@ export function hasBuiltinDetector(): boolean {
 
 const translators = new Map<string, Promise<ChromeTranslator>>();
 
-export const builtinTranslator: TranslationProvider = {
-  id: 'chrome-builtin',
-  label: 'Chrome on-device translator',
+function getTranslator(source: string, target: string): Promise<ChromeTranslator> {
+  const key = `${source}>${target}`;
+  let pending = translators.get(key);
+  if (!pending) {
+    pending = api.Translator!.create({ sourceLanguage: source, targetLanguage: target });
+    translators.set(key, pending);
+    pending.catch(() => translators.delete(key));
+  }
+  return pending;
+}
 
-  async canTranslate(source, target) {
-    if (!hasBuiltinTranslator()) return false;
-    try {
-      const a = await api.Translator!.availability({ sourceLanguage: source, targetLanguage: target });
-      return a !== 'unavailable';
-    } catch {
+async function availability(source: string, target: string): Promise<Availability> {
+  if (!hasBuiltinTranslator()) return 'unavailable';
+  try {
+    return await api.Translator!.availability({ sourceLanguage: source, targetLanguage: target });
+  } catch {
+    return 'unavailable';
+  }
+}
+
+/**
+ * @param waitForDownload If false, a language pair whose model isn't downloaded
+ *   yet is reported as unavailable (so the chain falls through to the next
+ *   provider) while the download starts in the background for next time.
+ */
+export function createBuiltinTranslator({ waitForDownload }: { waitForDownload: boolean }): TranslationProvider {
+  return {
+    id: 'chrome-builtin',
+    label: 'Chrome on-device translator',
+
+    async canTranslate(source, target) {
+      const a = await availability(source, target);
+      if (a === 'available' || (waitForDownload && a !== 'unavailable')) return true;
+      if (a !== 'unavailable') getTranslator(source, target).catch(() => {}); // warm up for next time
       return false;
-    }
-  },
+    },
 
-  async translate(text, source, target) {
-    const key = `${source}>${target}`;
-    let pending = translators.get(key);
-    if (!pending) {
-      pending = api.Translator!.create({ sourceLanguage: source, targetLanguage: target });
-      translators.set(key, pending);
-      pending.catch(() => translators.delete(key));
-    }
-    try {
-      return await (await pending).translate(text);
-    } catch (err) {
-      throw new TranslationError(`On-device translation failed: ${(err as Error).message}`);
-    }
-  },
-};
+    async translate(text, source, target) {
+      try {
+        return await (await getTranslator(source, target)).translate(text);
+      } catch (err) {
+        throw new TranslationError(`On-device translation failed: ${(err as Error).message}`);
+      }
+    },
+  };
+}
+
+export const builtinTranslator = createBuiltinTranslator({ waitForDownload: true });
 
 let detector: Promise<ChromeLanguageDetector> | undefined;
+let detectorReady: ChromeLanguageDetector | undefined;
 
 export const builtinDetector: LanguageDetector = {
   id: 'chrome-builtin',
   async detect(text) {
     if (!hasBuiltinDetector()) return null;
     try {
-      if (!detector) {
-        if ((await api.LanguageDetector!.availability()) === 'unavailable') return null;
+      if (!detectorReady) {
+        // Still being created (e.g. model downloading): let chrome.i18n answer meanwhile.
+        if (detector) return null;
+        const a = await api.LanguageDetector!.availability();
+        if (a === 'unavailable') return null;
         detector = api.LanguageDetector!.create();
-        detector.catch(() => (detector = undefined));
+        detector.then((d) => (detectorReady = d), () => (detector = undefined));
+        if (a !== 'available') return null;
+        detectorReady = await detector;
       }
-      const [best] = await (await detector).detect(text);
+      const [best] = await detectorReady.detect(text);
       return best && best.confidence >= 0.5 && best.detectedLanguage !== 'und' ? best.detectedLanguage : null;
     } catch {
       return null;

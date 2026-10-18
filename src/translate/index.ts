@@ -2,10 +2,11 @@
 // the user's preference and falls through the chain until one succeeds.
 import type { LanguageDetector, TranslationProvider } from './types.ts';
 import { TranslationError } from './types.ts';
-import { builtinDetector, builtinTranslator, i18nDetector } from './builtin.ts';
+import { builtinDetector, builtinTranslator, createBuiltinTranslator, i18nDetector } from './builtin.ts';
 import type { ProviderPreference } from '../shared/settings.ts';
 import { normalizeLang } from '../shared/languages.ts';
 import { send } from '../shared/messages.ts';
+import { createRemoteProvider } from './registry.ts';
 
 export type { TranslationProvider, LanguageDetector } from './types.ts';
 export { TranslationError } from './types.ts';
@@ -13,7 +14,7 @@ export { TranslationError } from './types.ts';
 /** Forwards to the remote provider, which runs in the service worker. */
 export const remoteProxy: TranslationProvider = {
   id: 'remote',
-  label: 'Remote translation service',
+  label: createRemoteProvider().label,
   canTranslate: async () => true,
   translate: async (text, source, target) => (await send({ type: 'translate', text, source, target })).text,
 };
@@ -25,6 +26,10 @@ const sameLanguage: TranslationProvider = {
   translate: async (text) => text,
 };
 
+// In "auto" mode, don't make the user wait for an on-device model download:
+// use the remote provider meanwhile and let the model download in the background.
+const builtinIfReady = createBuiltinTranslator({ waitForDownload: false });
+
 export function providerChain(pref: ProviderPreference): TranslationProvider[] {
   switch (pref) {
     case 'builtin':
@@ -32,8 +37,21 @@ export function providerChain(pref: ProviderPreference): TranslationProvider[] {
     case 'remote':
       return [remoteProxy];
     case 'auto':
-      return [builtinTranslator, remoteProxy];
+      return [builtinIfReady, remoteProxy];
   }
+}
+
+/** Per-provider time limit (first use of the on-device translator may download a model). */
+const TIMEOUT_MS = { default: 15_000, download: 120_000 };
+
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new TranslationError('Translation timed out.')), ms);
+    p.then(
+      (v) => (clearTimeout(t), resolve(v)),
+      (e) => (clearTimeout(t), reject(e)),
+    );
+  });
 }
 
 export interface TranslationResult {
@@ -51,8 +69,9 @@ export async function translate(
   let lastError: unknown;
   for (const provider of chain) {
     try {
-      if (!(await provider.canTranslate(source, target))) continue;
-      const out = (await provider.translate(text, source, target)).trim();
+      if (!(await withTimeout(provider.canTranslate(source, target), TIMEOUT_MS.default))) continue;
+      const ms = provider === builtinTranslator ? TIMEOUT_MS.download : TIMEOUT_MS.default;
+      const out = (await withTimeout(provider.translate(text, source, target), ms)).trim();
       if (out) return { text: out, provider };
     } catch (err) {
       lastError = err;
