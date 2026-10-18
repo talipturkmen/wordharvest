@@ -1,0 +1,75 @@
+name: Release
+
+# Push a tag like v1.2.0 (matching "version" in public/manifest.json) to:
+#   1. build and zip the extension
+#   2. attach the zip to a GitHub Release
+#   3. upload + publish it to the Chrome Web Store (skipped if the CWS_* secrets are missing)
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write # create the GitHub Release
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Check tag matches manifest version
+        id: version
+        run: |
+          VERSION=$(node -p "require('./public/manifest.json').version")
+          if [ "v$VERSION" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match manifest version $VERSION. Bump public/manifest.json first."
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      # Secrets are deliberately NOT exposed to install/build steps.
+      - run: npm ci
+      - name: Typecheck, test, build and zip
+        run: npm run package
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" "release/context-cards-${{ steps.version.outputs.version }}.zip" \
+            --title "$GITHUB_REF_NAME" --generate-notes
+
+      - name: Check Chrome Web Store credentials
+        id: cws
+        env:
+          EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+          PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
+          CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+        run: |
+          missing=""
+          for v in EXTENSION_ID PUBLISHER_ID CLIENT_ID CLIENT_SECRET REFRESH_TOKEN; do
+            [ -n "${!v}" ] || missing="$missing CWS_$v"
+          done
+          if [ -n "$missing" ]; then
+            echo "::notice title=Chrome Web Store upload skipped::Missing secrets:$missing. See store/PUBLISHING.md."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload and publish to Chrome Web Store
+        if: steps.cws.outputs.enabled == 'true'
+        env:
+          EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+          PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
+          CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+        # No sub-command = upload, then publish (the new version goes to review).
+        run: npx --yes chrome-webstore-upload-cli@4.0.2 --source "release/context-cards-${{ steps.version.outputs.version }}.zip"

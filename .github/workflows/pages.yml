@@ -1,0 +1,51 @@
+name: Privacy policy site
+
+# Publishes store/privacy-policy.md to GitHub Pages so the Chrome Web Store
+# listing can link to it: https://<user>.github.io/<repo>/privacy-policy/
+on:
+  push:
+    branches: [main]
+    paths:
+      - store/privacy-policy.md
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Assemble site
+        run: |
+          mkdir -p site
+          {
+            printf -- '---\ntitle: Privacy Policy – Context Cards\npermalink: /privacy-policy/\n---\n\n'
+            cat store/privacy-policy.md
+          } > site/privacy-policy.md
+          printf -- '---\ntitle: Context Cards\n---\n\n# Context Cards\n\nA Chrome extension for learning vocabulary while you read.\n\n- [Privacy policy](privacy-policy/)\n- [Source code](https://github.com/%s)\n' \
+            "$GITHUB_REPOSITORY" > site/index.md
+      - uses: actions/configure-pages@v6
+      - uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./site
+          destination: ./_site
+      - uses: actions/upload-pages-artifact@v5
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
