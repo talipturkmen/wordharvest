@@ -58,7 +58,9 @@ function installChromeMock({ storage, dictionary, lang, lessonResult }) {
   if (window.speechSynthesis) {
     const voice = { lang: `${lang}-ES`, name: 'Mock', default: true, localService: true, voiceURI: 'mock' };
     speechSynthesis.getVoices = () => [voice];
-    speechSynthesis.speak = () => {};
+    // Remember what was spoken so the screenshot script can answer listening exercises.
+    speechSynthesis.speak = (u) => { window.__lastSpoken = u.text; };
+    speechSynthesis.cancel = () => {};
   }
   window.AudioContext = class { constructor() { throw new Error('muted'); } };
 

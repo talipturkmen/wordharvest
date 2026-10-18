@@ -26,6 +26,7 @@
     <section id="home">
       <div id="home-welcome" class="panel empty" hidden></div>
       <div id="home-main">
+        <div id="lang-chips" class="lang-chips" hidden></div>
         <div class="stat-cards">
           <div class="stat-card streak-card">
             <div class="stat-head"><span class="flame" id="streak-flame">🔥</span><span><b id="streak-count">0</b> day streak</span></div>
@@ -83,6 +84,7 @@
   <main id="view-browse" hidden>
     <div class="toolbar">
       <input id="search" type="search" placeholder="Search words, translations and sentences…" autocomplete="off">
+      <select id="lang-filter" aria-label="Language" hidden></select>
       <select id="sort" aria-label="Sort by">
         <option value="recent">Recently added</option>
         <option value="alpha">A → Z</option>

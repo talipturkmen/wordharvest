@@ -12,6 +12,7 @@ const email = $<HTMLInputElement>('myMemoryEmail');
 const dailyGoal = $<HTMLSelectElement>('dailyGoal');
 const soundEffects = $<HTMLInputElement>('soundEffects');
 const listening = $<HTMLInputElement>('listening');
+const moreSentences = $<HTMLInputElement>('moreSentences');
 const radios = [...document.querySelectorAll<HTMLInputElement>('input[name="provider"]')];
 
 let savedTimer: ReturnType<typeof setTimeout> | undefined;
@@ -48,6 +49,7 @@ void getSettings().then((s) => {
   dailyGoal.value = String(s.dailyGoal);
   soundEffects.checked = s.soundEffects;
   listening.checked = s.listening;
+  moreSentences.checked = s.moreSentences;
   for (const r of radios) r.checked = r.value === s.provider;
   void describeBuiltin(s.targetLang);
 });
@@ -66,3 +68,4 @@ email.addEventListener('change', () => {
 dailyGoal.addEventListener('change', () => void save({ dailyGoal: Number(dailyGoal.value) }));
 soundEffects.addEventListener('change', () => void save({ soundEffects: soundEffects.checked }));
 listening.addEventListener('change', () => void save({ listening: listening.checked }));
+moreSentences.addEventListener('change', () => void save({ moreSentences: moreSentences.checked }));

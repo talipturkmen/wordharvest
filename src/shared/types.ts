@@ -26,6 +26,17 @@ export interface SrsState {
   lastReviewed?: number;
 }
 
+/** An extra example sentence fetched for a word (not from the user's reading). */
+export interface MoreSentence {
+  text: string;
+  /** Translation into the target language, when the source has one. */
+  translation?: string;
+  source: 'tatoeba';
+  /** Tatoeba sentence id (for the attribution link). */
+  id: number;
+  author?: string;
+}
+
 export interface Card {
   /** `${lang}:${normalized term}` — deterministic so re-saving a word merges. */
   id: string;
@@ -36,6 +47,13 @@ export interface Card {
   notes?: string;
   examples: Example[];
   srs: SrsState;
+  /** Extra example sentences for more varied exercises (see src/shared/tatoeba.ts). */
+  more?: {
+    sentences: MoreSentence[];
+    fetchedAt: number;
+    /** Target language the translations are in. */
+    lang: string;
+  };
   createdAt: number;
   updatedAt: number;
 }

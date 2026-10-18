@@ -46,7 +46,8 @@ const raw = [
 ];
 
 export function sampleStorage(now = Date.now()) {
-  const storage = { settings: { targetLang: 'en', autoSave: false, translateSentences: true, provider: 'auto', myMemoryEmail: '' } };
+  // moreSentences off: screenshots must not depend on live Tatoeba results.
+  const storage = { settings: { targetLang: 'en', autoSave: false, translateSentences: true, provider: 'auto', myMemoryEmail: '', moreSentences: false } };
   raw.forEach(([lang, term, translation, dueDays, reps, interval, examples], i) => {
     const createdAt = now - (raw.length - i) * DAY * 1.7;
     const id = `${lang}:${term.toLocaleLowerCase()}`;

@@ -1,23 +1,33 @@
 // Lesson building: picks cards and turns each into an exercise whose difficulty
-// grows with how well the word is known. Pure (randomness is injected) and unit-tested.
+// grows with how well the word is known, drawing on every sentence the word
+// appears in (see contexts.ts). Pure (randomness is injected) and unit-tested.
 import type { Card } from './types.ts';
 import type { Grade } from './srs.ts';
 import { isDueToday } from './srs.ts';
 import { highlightParts } from './highlight.ts';
+import { contextsFor, findWord, tokenize, type Context } from './contexts.ts';
 
 export type Rng = () => number;
 
+type WithContext = { context: Context };
+
 export type Exercise =
   /** First meeting with a new word: shown, not tested. */
-  | { kind: 'intro'; card: Card }
+  | { kind: 'intro'; card: Card; contexts: Context[] }
   /** See (or hear) the word, pick its meaning. */
   | { kind: 'choose-translation'; card: Card; options: string[]; answer: string; listen: boolean }
   /** See the meaning, pick the word. */
   | { kind: 'choose-word'; card: Card; options: string[]; answer: string }
-  /** Fill the blank in the saved sentence from word chips. */
-  | { kind: 'cloze-choose'; card: Card; before: string; after: string; options: string[]; answer: string }
-  /** Type the missing word into the saved sentence. */
-  | { kind: 'cloze-type'; card: Card; before: string; after: string; answer: string }
+  /** Fill the blank in a sentence from word chips. */
+  | ({ kind: 'cloze-choose'; card: Card; before: string; after: string; options: string[]; answer: string } & WithContext)
+  /** Type the missing word into a sentence. */
+  | ({ kind: 'cloze-type'; card: Card; before: string; after: string; answer: string } & WithContext)
+  /** Read a sentence with the word, pick its translation. */
+  | ({ kind: 'sentence-meaning'; card: Card; options: string[]; answer: string } & WithContext)
+  /** Arrange word tiles to build the sentence for a translation. */
+  | ({ kind: 'build-sentence'; card: Card; tiles: string[]; answer: string[] } & WithContext)
+  /** Hear the word, type it. */
+  | { kind: 'listen-type'; card: Card; answer: string }
   /** Type the word for a given meaning (cards without a usable sentence). */
   | { kind: 'type-word'; card: Card; answer: string }
   /** Bonus round: match words to meanings. Not graded. */
@@ -87,16 +97,13 @@ export function clozeParts(sentence: string, word: string): { before: string; an
   };
 }
 
-function bestCloze(card: Card) {
-  // Prefer the most recent example, which is the context the learner saw last.
-  for (const ex of [...card.examples].reverse()) {
-    const c = clozeParts(ex.sentence, ex.word || card.term);
-    if (c) return c;
-  }
-  return null;
-}
+const BUILD_MIN_TILES = 3;
+const BUILD_MAX_TILES = 9;
 
-/** An exercise for `card` matched to its strength, using `all` for wrong options. */
+/**
+ * An exercise for `card`: picks at random among the exercise types that suit
+ * its strength and the material available (sentences, translations, voices).
+ */
 export function exerciseFor(
   card: Card,
   all: readonly Card[],
@@ -108,24 +115,69 @@ export function exerciseFor(
   const sameLang = others.filter((c) => c.lang === card.lang);
   const meanings = distractors(card.translation, others.map((c) => c.translation), 3, rng);
   const words = distractors(card.term, (sameLang.length >= 3 ? sameLang : others).map((c) => c.term), 3, rng);
-  const cloze = bestCloze(card);
+  const contexts = shuffle(contextsFor(card, all), rng);
+  const speech = canSpeak(card.lang);
 
-  if (level <= 1 && meanings.length > 0) {
-    return {
-      kind: 'choose-translation', card, answer: card.translation,
-      options: shuffle([card.translation, ...meanings], rng),
-      listen: level === 1 && canSpeak(card.lang) && rng() < 0.5,
-    };
-  }
-  if (level === 2 && cloze && words.length > 0) {
-    const ws = distractors(cloze.answer, words, 3, rng);
-    return { kind: 'cloze-choose', card, before: cloze.before, after: cloze.after, answer: cloze.answer, options: shuffle([cloze.answer, ...ws], rng) };
-  }
-  if (level === 2 && words.length > 0) {
-    return { kind: 'choose-word', card, answer: card.term, options: shuffle([card.term, ...words], rng) };
-  }
-  if (cloze) return { kind: 'cloze-type', card, before: cloze.before, after: cloze.after, answer: cloze.answer };
-  return { kind: 'type-word', card, answer: card.term };
+  const cloze = contexts
+    .map((context) => ({ context, parts: findWord(context.sentence, context.word, card.lang) }))
+    .find((c) => c.parts);
+  const translated = contexts.find((c) => c.translation);
+  const buildable = contexts.find((c) => {
+    const n = c.translation ? tokenize(c.sentence, card.lang).length : 0;
+    return n >= BUILD_MIN_TILES && n <= BUILD_MAX_TILES;
+  });
+  // Wrong options for "what does this sentence mean": translations of other sentences.
+  const otherSentenceMeanings = others.flatMap((c) => contextsFor(c, all).map((x) => x.translation ?? ''));
+
+  const make: Record<string, (() => Exercise) | null> = {
+    chooseTranslation: meanings.length
+      ? () => ({ kind: 'choose-translation', card, answer: card.translation, options: shuffle([card.translation, ...meanings], rng), listen: false })
+      : null,
+    listen: meanings.length && speech
+      ? () => ({ kind: 'choose-translation', card, answer: card.translation, options: shuffle([card.translation, ...meanings], rng), listen: true })
+      : null,
+    chooseWord: words.length
+      ? () => ({ kind: 'choose-word', card, answer: card.term, options: shuffle([card.term, ...words], rng) })
+      : null,
+    clozeChoose: cloze && words.length
+      ? () => {
+          const { before, answer, after } = cloze.parts!;
+          return { kind: 'cloze-choose', card, context: cloze.context, before, after, answer, options: shuffle([answer, ...distractors(answer, words, 3, rng)], rng) };
+        }
+      : null,
+    clozeType: cloze
+      ? () => ({ kind: 'cloze-type', card, context: cloze.context, before: cloze.parts!.before, after: cloze.parts!.after, answer: cloze.parts!.answer })
+      : null,
+    sentenceMeaning: translated && distractors(translated.translation!, otherSentenceMeanings, 2, rng).length >= 2
+      ? () => {
+          const wrong = distractors(translated.translation!, otherSentenceMeanings, 3, rng);
+          return { kind: 'sentence-meaning', card, context: translated, answer: translated.translation!, options: shuffle([translated.translation!, ...wrong], rng) };
+        }
+      : null,
+    buildSentence: buildable
+      ? () => {
+          const answer = tokenize(buildable.sentence, card.lang);
+          return { kind: 'build-sentence', card, context: buildable, answer, tiles: shuffle(answer, rng) };
+        }
+      : null,
+    listenType: speech ? () => ({ kind: 'listen-type', card, answer: card.term }) : null,
+  };
+
+  const byLevel: string[][] = [
+    ['chooseTranslation'],
+    ['chooseTranslation', 'listen', 'sentenceMeaning', 'clozeChoose'],
+    ['clozeChoose', 'chooseWord', 'sentenceMeaning', 'buildSentence'],
+    ['clozeType', 'buildSentence', 'listenType', 'clozeChoose'],
+    ['clozeType', 'buildSentence', 'listenType', 'sentenceMeaning'],
+    ['clozeType', 'listenType', 'buildSentence'],
+  ];
+  const options = byLevel[Math.min(level, 5)]!.map((k) => make[k]).filter((f): f is () => Exercise => !!f);
+  if (options.length) return options[Math.floor(rng() * options.length)]!();
+  // Fallbacks when there's little material (few saved words, no sentences):
+  // known words are typed; new ones get multiple choice when possible.
+  const typeWord = (): Exercise => ({ kind: 'type-word', card, answer: card.term });
+  if (level >= 3) return (make.clozeType ?? typeWord)();
+  return (make.clozeType ?? make.chooseTranslation ?? typeWord)();
 }
 
 /** A simpler re-test for a word answered wrong (shown again at the end of the lesson). */
@@ -140,9 +192,22 @@ export function weakestCards(cards: readonly Card[], n: number): Card[] {
     .slice(0, n);
 }
 
-export function pickLessonCards(cards: readonly Card[], now: number, practice: boolean): Card[] {
-  if (practice) return weakestCards(cards.filter((c) => strength(c) > 0), LESSON_MAX_CARDS);
-  const due = cards.filter((c) => isDueToday(c.srs, now)).sort((a, b) => a.srs.due - b.srs.due);
+/**
+ * The language a lesson uses: the chosen one, or (for "all") the language with
+ * the most due words, so a lesson never mixes languages.
+ */
+export function lessonLanguage(cards: readonly Card[], now: number, active: string, practice: boolean): string | null {
+  const eligible = cards.filter((c) => (practice ? strength(c) > 0 : isDueToday(c.srs, now)));
+  if (active !== 'all') return eligible.some((c) => c.lang === active) ? active : null;
+  const counts = new Map<string, number>();
+  for (const c of eligible) counts.set(c.lang, (counts.get(c.lang) ?? 0) + 1);
+  return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+}
+
+export function pickLessonCards(cards: readonly Card[], now: number, practice: boolean, lang?: string | null): Card[] {
+  const pool = lang ? cards.filter((c) => c.lang === lang) : cards;
+  if (practice) return weakestCards(pool.filter((c) => strength(c) > 0), LESSON_MAX_CARDS);
+  const due = pool.filter((c) => isDueToday(c.srs, now)).sort((a, b) => a.srs.due - b.srs.due);
   const reviews = due.filter((c) => strength(c) > 0);
   const fresh = due.filter((c) => strength(c) === 0).slice(0, LESSON_MAX_NEW);
   // Reviews first so new words never crowd out what you're about to forget.
@@ -154,7 +219,7 @@ export function buildLesson(picked: readonly Card[], all: readonly Card[], rng: 
   const pendingTests: Exercise[] = [];
   for (const card of shuffle(picked, rng)) {
     if (strength(card) === 0) {
-      out.push({ kind: 'intro', card });
+      out.push({ kind: 'intro', card, contexts: contextsFor(card, all) });
       pendingTests.push(exerciseFor(card, all, rng, canSpeak));
     } else {
       out.push(exerciseFor(card, all, rng, canSpeak));

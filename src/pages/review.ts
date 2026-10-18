@@ -21,6 +21,8 @@ function show(): void {
     if (a.dataset.view === view) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
   }
+  // The lesson and its summary hide the top menu; any other view shows it again.
+  if (view !== 'learn') document.body.classList.remove('in-lesson');
   if (view === 'learn' && !inLesson()) void renderHome();
   if (view === 'browse') void loadBrowse();
 }

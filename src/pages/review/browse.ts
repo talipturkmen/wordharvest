@@ -13,9 +13,11 @@ let limit = PAGE;
 
 const search = $<HTMLInputElement>('search');
 const sort = $<HTMLSelectElement>('sort');
+const langFilter = $<HTMLSelectElement>('lang-filter');
 
 export async function loadBrowse(): Promise<void> {
   all = await getAllCards();
+  renderLangFilter();
   render();
 }
 
@@ -72,12 +74,41 @@ function item(c: Card, now: number): HTMLLIElement {
   return li;
 }
 
+function renderLangFilter(): void {
+  const counts = new Map<string, number>();
+  for (const c of all) counts.set(c.lang, (counts.get(c.lang) ?? 0) + 1);
+  const langs = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+  langFilter.hidden = langs.length < 2;
+  const current = langFilter.value || 'all';
+  langFilter.replaceChildren(
+    new Option(`All languages (${all.length})`, 'all'),
+    ...langs.map(([lang, n]) => new Option(`${languageName(lang)} (${n})`, lang)),
+  );
+  langFilter.value = counts.has(current) ? current : 'all';
+}
+
 function render(): void {
   const now = Date.now();
   const q = search.value.trim().toLocaleLowerCase();
-  const list = sorted(all.filter((c) => matches(c, q)));
-  $('count').textContent = q ? `${list.length} of ${all.length}` : `${all.length} card${all.length === 1 ? '' : 's'}`;
-  $('card-list').replaceChildren(...list.slice(0, limit).map((c) => item(c, now)));
+  const lang = langFilter.value || 'all';
+  const inLang = lang === 'all' ? all : all.filter((c) => c.lang === lang);
+  const list = sorted(inLang.filter((c) => matches(c, q)));
+  $('count').textContent = q ? `${list.length} of ${inLang.length}` : `${inLang.length} word${inLang.length === 1 ? '' : 's'}`;
+
+  // With several languages and no filter, group the list by language.
+  const shown = list.slice(0, limit);
+  const languages = new Set(shown.map((c) => c.lang));
+  if (lang === 'all' && languages.size > 1) {
+    const order = [...languages].sort((a, b) => list.filter((c) => c.lang === b).length - list.filter((c) => c.lang === a).length);
+    $('card-list').replaceChildren(
+      ...order.flatMap((l) => {
+        const group = shown.filter((c) => c.lang === l);
+        return [h('li', { class: 'lang-group', text: `${languageName(l)} · ${list.filter((c) => c.lang === l).length}` }), ...group.map((c) => item(c, now))];
+      }),
+    );
+  } else {
+    $('card-list').replaceChildren(...shown.map((c) => item(c, now)));
+  }
   $('more').hidden = list.length <= limit;
 
   const empty = $('browse-empty');
@@ -85,10 +116,14 @@ function render(): void {
   empty.replaceChildren(
     all.length === 0
       ? h('p', { class: 'muted', text: 'No saved words yet. Double-click a word on any web page to get started.' })
-      : h('p', { class: 'muted', text: 'No cards match your search.' }),
+      : h('p', { class: 'muted', text: 'No words match your search.' }),
   );
 }
 
+langFilter.addEventListener('change', () => {
+  limit = PAGE;
+  render();
+});
 search.addEventListener('input', () => {
   limit = PAGE;
   render();

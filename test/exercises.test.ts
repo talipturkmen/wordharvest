@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   buildLesson, checkAnswer, clozeParts, distractors, exerciseFor, gradeFor, mulberry32,
-  pickLessonCards, strength, type Exercise,
+  lessonLanguage, pickLessonCards, strength, type Exercise,
 } from '../src/shared/exercises.ts';
 import { applySave } from '../src/shared/cards.ts';
 import { DAY } from '../src/shared/srs.ts';
@@ -32,9 +32,49 @@ test('strength follows the review interval', () => {
   assert.deepEqual(deck.map(strength), [0, 1, 2, 3, 5]);
 });
 
-test('exercise difficulty grows with strength', () => {
-  const kinds = deck.map((c) => exerciseFor(c, deck, rng(), noSpeech).kind);
-  assert.deepEqual(kinds, ['choose-translation', 'choose-translation', 'cloze-choose', 'cloze-type', 'type-word']);
+test('exercise difficulty grows with strength, with variety per level', () => {
+  const allowed: Record<number, string[]> = {
+    0: ['choose-translation'],
+    1: ['choose-translation', 'sentence-meaning', 'cloze-choose'],
+    2: ['cloze-choose', 'choose-word', 'sentence-meaning', 'build-sentence'],
+    3: ['cloze-type', 'build-sentence', 'listen-type', 'cloze-choose'],
+    5: ['cloze-type', 'listen-type', 'build-sentence', 'type-word'],
+  };
+  for (const card of deck) {
+    const kinds = new Set(Array.from({ length: 40 }, (_, i) => exerciseFor(card, deck, mulberry32(i), noSpeech).kind));
+    for (const k of kinds) assert.ok(allowed[strength(card)]!.includes(k), `${card.term} (strength ${strength(card)}): ${k}`);
+  }
+  // A learning word gets more than one kind of exercise across lessons.
+  const kinds = new Set(Array.from({ length: 40 }, (_, i) => exerciseFor(deck[2]!, deck, mulberry32(i), noSpeech).kind));
+  assert.ok(kinds.size >= 2, [...kinds].join());
+});
+
+test('listening exercises appear only when a voice exists', () => {
+  const kinds = new Set(Array.from({ length: 60 }, (_, i) => exerciseFor(deck[3]!, deck, mulberry32(i), () => true).kind));
+  assert.ok(kinds.has('listen-type'));
+  const none = new Set(Array.from({ length: 60 }, (_, i) => exerciseFor(deck[3]!, deck, mulberry32(i), noSpeech).kind));
+  assert.ok(!none.has('listen-type'));
+});
+
+test('build-sentence uses translated sentences and its tiles are the words of the sentence', () => {
+  const card = { ...make('perro', 'dog', learned(1)), more: { lang: 'en', fetchedAt: 0, sentences: [
+    { text: 'Mi perro come mucho.', translation: 'My dog eats a lot.', source: 'tatoeba' as const, id: 1 },
+  ] } };
+  const found = Array.from({ length: 60 }, (_, i) => exerciseFor(card, [card, ...deck.slice(1)], mulberry32(i), noSpeech))
+    .find((e) => e.kind === 'build-sentence');
+  assert.ok(found && found.kind === 'build-sentence');
+  assert.deepEqual(found.answer, ['Mi', 'perro', 'come', 'mucho']);
+  assert.deepEqual([...found.tiles].sort(), [...found.answer].sort());
+  assert.equal(found.context.source, 'tatoeba');
+});
+
+test('lessonLanguage keeps a lesson to one language', () => {
+  const de = [make('Haus', 'house', learned(1)), make('Hund', 'dog', learned(1))].map((c) => ({ ...c, lang: 'de', id: `de:${c.term}` }));
+  const cards = [...deck, ...de];
+  assert.equal(lessonLanguage(cards, now, 'all', false), 'es');
+  assert.equal(lessonLanguage(cards, now, 'de', false), 'de');
+  assert.equal(lessonLanguage(cards, now, 'fr', false), null);
+  assert.ok(pickLessonCards(cards, now, false, 'de').every((c) => c.lang === 'de'));
 });
 
 test('multiple-choice options contain the answer once and no duplicates', () => {
@@ -64,6 +104,12 @@ test('a lesson introduces new words before testing them and ends with matching',
 test('with a single word there are no options, so the test is typed', () => {
   const lesson = buildLesson([deck[0]!], [deck[0]!], rng(), noSpeech);
   assert.deepEqual(lesson.map((e) => e.kind), ['intro', 'cloze-type']);
+});
+
+test('the intro shows every sentence the word is known from', () => {
+  const [intro] = buildLesson([deck[0]!], deck, rng(), noSpeech);
+  assert.ok(intro && intro.kind === 'intro');
+  assert.deepEqual(intro.contexts.map((c) => c.sentence), ['El gato duerme.']);
 });
 
 test('pickLessonCards takes due reviews first and limits new words', () => {

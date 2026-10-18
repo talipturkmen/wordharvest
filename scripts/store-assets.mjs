@@ -62,13 +62,36 @@ async function solve(page) {
       return;
     }
     if (ex.querySelector('.intro-card')) return;
+    // Every sentence we know, with its translation.
+    const sentences = cards.flatMap((c) => [
+      ...c.examples.map((e) => ({ text: e.sentence, translation: e.translation, card: c })),
+      ...(c.more?.sentences ?? []).map((m) => ({ text: m.text, translation: m.translation, card: c })),
+    ]);
+    const spokenCard = cards.find((c) => c.term === window.__lastSpoken);
+    if (ex.querySelector('.build')) {
+      const target = sentences.find((x) => x.translation === text('.big-word'));
+      let rest = target?.text ?? '';
+      const tiles = [...ex.querySelectorAll('.build-bank .word-tile')];
+      while (tiles.length) {
+        // Place the tile that appears earliest in what's left of the sentence.
+        tiles.sort((a, b) => (rest.indexOf(a.textContent) + 1 || 1e9) - (rest.indexOf(b.textContent) + 1 || 1e9));
+        const t = tiles.shift();
+        rest = rest.slice(rest.indexOf(t.textContent) + t.textContent.length);
+        t.click();
+      }
+      return;
+    }
     const sentence = ex.querySelector('.ex-sentence');
     let answer;
-    if (sentence) {
+    if (ex.querySelector('.sentence-prompt')) {
+      answer = sentences.find((x) => x.text === sentence.textContent)?.translation;
+    } else if (ex.querySelector('.speaker.big')) {
+      answer = ex.querySelector('input') ? spokenCard?.term : spokenCard?.translation;
+    } else if (sentence) {
       const before = sentence.firstChild.textContent;
       const after = sentence.lastChild.textContent;
-      for (const c of cards) for (const e of c.examples) {
-        if (e.sentence.startsWith(before) && e.sentence.endsWith(after)) answer = e.sentence.slice(before.length, e.sentence.length - after.length);
+      for (const x of sentences) {
+        if (x.text.startsWith(before) && x.text.endsWith(after)) answer = x.text.slice(before.length, x.text.length - after.length);
       }
     } else {
       const prompt = text('.big-word');
@@ -77,6 +100,7 @@ async function solve(page) {
       if (card) answer = /mean\?$/.test(label) ? card.translation : card.term;
     }
     const option = [...ex.querySelectorAll('.choice, .chip')].find((b) => b.lastChild.textContent === answer);
+    if (!option && !ex.querySelector('input')) ex.querySelector('.choice, .chip')?.click(); // never get stuck
     if (option) option.click();
     const input = ex.querySelector('input');
     if (input) {
@@ -138,10 +162,18 @@ const shot = (name) => out('store/screenshots', name);
   // 3. A fill-in-the-blank exercise, answered correctly.
   await page.click('#start-lesson');
   await page.waitForSelector('#lesson:not([hidden])');
-  for (let i = 0; i < 30 && !(await page.$('#exercise .chips')); i++) {
+  // Play until a sentence exercise (fill-in, build, sentence meaning) shows up.
+  const TARGET = '#exercise .chips, #exercise .build, #exercise .sentence-prompt';
+  for (let i = 0; i < 80 && !(await page.$(TARGET)); i++) {
+    if (await page.$('#summary:not([hidden])')) {
+      await page.evaluate(() => document.querySelector('.sum-actions .ghost').click()); // another lesson
+      await page.waitForSelector('#lesson:not([hidden])');
+      continue;
+    }
     await solve(page);
     await press(page);
     if (await page.$('#lesson-footer.good, #lesson-footer.bad')) await press(page);
+    await new Promise((r) => setTimeout(r, 250));
   }
   await solve(page);
   await press(page);

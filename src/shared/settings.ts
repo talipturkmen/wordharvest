@@ -19,6 +19,10 @@ export interface Settings {
   soundEffects: boolean;
   /** Use the browser's speech synthesis for listening exercises. */
   listening: boolean;
+  /** Fetch extra example sentences from Tatoeba for more varied exercises. */
+  moreSentences: boolean;
+  /** Language whose words lessons use: a language code, or 'all'. */
+  activeLang: string;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -30,6 +34,8 @@ export const DEFAULT_SETTINGS: Settings = {
   dailyGoal: 20,
   soundEffects: true,
   listening: true,
+  moreSentences: true,
+  activeLang: 'all',
 };
 
 const KEY = 'settings';

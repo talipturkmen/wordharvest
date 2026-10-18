@@ -9,7 +9,7 @@ import {
 import { ACHIEVEMENTS } from '../../shared/progress.ts';
 import { send, type LessonResult } from '../../shared/messages.ts';
 import { languageName } from '../../shared/languages.ts';
-import { exampleForReview } from '../../shared/cards.ts';
+import type { Context } from '../../shared/contexts.ts';
 import { $, h, renderHighlighted } from '../dom.ts';
 import { confetti, sound, speak } from '../fx.ts';
 
@@ -141,6 +141,21 @@ function sentenceWithBlank(before: string, after: string, blank: HTMLElement): H
   return h('p', { class: 'ex-sentence' }, before, blank, after);
 }
 
+/** Where a sentence came from; Tatoeba sentences must be credited (CC BY). */
+function credit(ctx: Context): HTMLElement | null {
+  if (ctx.source === 'tatoeba') {
+    return h('a', { class: 'credit', href: ctx.ref ?? 'https://tatoeba.org', target: '_blank', rel: 'noopener', text: ctx.credit ?? 'Tatoeba · CC BY 2.0 FR' });
+  }
+  if (ctx.source === 'reading') return h('span', { class: 'credit', text: 'From your reading' });
+  return null;
+}
+
+function sentenceSpeaker(ctx: Context, lang: string): HTMLButtonElement {
+  const b = h('button', { class: 'speaker small', title: 'Listen to the sentence', 'aria-label': 'Listen to the sentence', text: '🔊' });
+  b.addEventListener('click', () => speak(ctx.sentence, lang));
+  return b;
+}
+
 function hintLine(text: string | undefined): HTMLElement | null {
   return text ? h('p', { class: 'ex-hint', text }) : null;
 }
@@ -161,16 +176,27 @@ function render(): void {
   const body: (HTMLElement | null)[] = [];
   switch (ex.kind) {
     case 'intro': {
-      const example = exampleForReview(ex.card);
-      const sentence = h('p', { class: 'ex-sentence small' });
-      if (example) renderHighlighted(sentence, example.sentence, example.word || ex.card.term);
+      const [first, ...more] = ex.contexts;
+      const sentence = (ctx: Context, cls: string) => {
+        const p = h('p', { class: cls });
+        renderHighlighted(p, ctx.sentence, ctx.word);
+        return p;
+      };
       body.push(
         h('div', { class: 'new-badge', text: 'New word' }),
         h('div', { class: 'intro-card' },
           h('div', { class: 'word-row' }, h('span', { class: 'big-word', text: ex.card.term }), speakerButton(ex.card)),
           h('div', { class: 'meaning', text: ex.card.translation }),
-          example ? sentence : null,
-          hintLine(example?.translation),
+          first ? sentence(first, 'ex-sentence small') : null,
+          hintLine(first?.translation),
+          more.length
+            ? h('div', { class: 'more-examples' },
+                h('div', { class: 'lang-note', text: 'More examples' }),
+                ...more.slice(0, 3).map((ctx) => h('div', { class: 'more-example' },
+                  sentence(ctx, 'more-sentence'),
+                  ctx.translation ? h('div', { class: 'ex-hint', text: ctx.translation }) : null,
+                  credit(ctx))))
+            : null,
           h('div', { class: 'lang-note', text: languageName(ex.card.lang) }),
         ),
       );
@@ -197,7 +223,8 @@ function render(): void {
       body.push(
         label('Fill in the blank'),
         sentenceWithBlank(ex.before, ex.after, blank),
-        hintLine(exampleForReview(ex.card)?.translation),
+        hintLine(ex.context.translation),
+        credit(ex.context),
         choices(ex.options, ex.answer, (o) => {
           blank.textContent = o;
           blank.classList.add('filled');
@@ -210,7 +237,35 @@ function render(): void {
         label('Type the missing word'),
         sentenceWithBlank(ex.before, ex.after, textInput(ex.answer, true)),
         hintLine(`“${ex.card.translation}”`),
+        credit(ex.context),
       );
+      break;
+    case 'sentence-meaning': {
+      const sentence = h('p', { class: 'ex-sentence' });
+      renderHighlighted(sentence, ex.context.sentence, ex.context.word);
+      body.push(
+        label('What does this sentence mean?'),
+        h('div', { class: 'prompt sentence-prompt' }, st.listening ? sentenceSpeaker(ex.context, ex.card.lang) : null, sentence),
+        credit(ex.context),
+        choices(ex.options, ex.answer),
+      );
+      break;
+    }
+    case 'build-sentence':
+      body.push(
+        label('Write this in ' + languageName(ex.card.lang)),
+        h('div', { class: 'prompt' }, h('span', { class: 'big-word quoted sentence-size', text: ex.context.translation ?? '' })),
+        buildBoard(ex.tiles, ex.answer, ex.context.sentence),
+        credit(ex.context),
+      );
+      break;
+    case 'listen-type':
+      body.push(
+        label('Type what you hear'),
+        h('div', { class: 'prompt' }, speakerButton(ex.card, true)),
+        textInput(ex.answer, false),
+      );
+      speak(ex.card.term, ex.card.lang);
       break;
     case 'type-word':
       body.push(
@@ -227,6 +282,40 @@ function render(): void {
   exerciseEl.classList.remove('enter');
   void exerciseEl.offsetWidth; // restart the entrance animation
   exerciseEl.classList.add('enter');
+}
+
+/** Word-tile sentence builder: tap tiles to place them, tap a placed tile to put it back. */
+function buildBoard(tiles: string[], answer: string[], sentence: string): HTMLElement {
+  const line = h('div', { class: 'build-line' });
+  const bank = h('div', { class: 'build-bank' });
+  const placed: HTMLButtonElement[] = [];
+  const update = () => setCheckable(placed.length > 0);
+  for (const text of tiles) {
+    const slot = h('span', { class: 'tile-slot' });
+    const tile = h('button', { class: 'word-tile', text });
+    tile.addEventListener('click', () => {
+      if (phase !== 'answer') return;
+      if (tile.parentElement === line) {
+        slot.append(tile);
+        placed.splice(placed.indexOf(tile), 1);
+      } else {
+        line.append(tile);
+        placed.push(tile);
+      }
+      update();
+    });
+    slot.append(tile);
+    bank.append(slot);
+  }
+  checker = () => {
+    for (const t of [...line.children, ...bank.querySelectorAll('.word-tile')]) (t as HTMLButtonElement).disabled = true;
+    const built = placed.map((t) => t.textContent ?? '').join(' ');
+    const result = checkAnswer(built, answer.join(' '));
+    line.classList.add(result === 'wrong' ? 'wrong' : 'right');
+    // Show the real sentence (with punctuation) as the expected answer.
+    return { result, expected: sentence, typed: false };
+  };
+  return h('div', { class: 'build' }, line, bank);
 }
 
 function matchBoard(cards: Card[]): HTMLElement {

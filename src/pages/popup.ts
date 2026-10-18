@@ -3,6 +3,7 @@ import { getAllCards, getProgress } from '../shared/storage.ts';
 import { getSettings } from '../shared/settings.ts';
 import { isDueToday } from '../shared/srs.ts';
 import { currentStreak, streakAtRisk, xpToday } from '../shared/progress.ts';
+import { languageName } from '../shared/languages.ts';
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -22,7 +23,9 @@ void Promise.all([getAllCards(), getProgress(), getSettings()]).then(([cards, pr
   const now = Date.now();
   const streak = currentStreak(progress, now);
   const today = xpToday(progress, now);
-  const due = cards.filter((c) => isDueToday(c.srs, now)).length;
+  const lang = settings.activeLang !== 'all' && cards.some((c) => c.lang === settings.activeLang) ? settings.activeLang : null;
+  const due = cards.filter((c) => (!lang || c.lang === lang) && isDueToday(c.srs, now)).length;
+  if (lang) $('due-label').textContent = `due · ${languageName(lang)}`;
 
   $('streak').textContent = String(streak);
   $('flame').classList.toggle('off', streak === 0 || streakAtRisk(progress, now));
