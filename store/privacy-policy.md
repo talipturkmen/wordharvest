@@ -1,6 +1,6 @@
 # Privacy Policy — WordHarvest
 
-_Last updated: October 18, 2026_
+_Last updated: October 18, 2026 (v1.1)_
 
 WordHarvest is a Chrome extension for learning vocabulary while you read. This policy explains what data the extension handles and where that data goes.
 
@@ -17,8 +17,9 @@ When you save a word, the extension stores these items in your browser's extensi
 - the word, its translation and the detected language
 - the sentence the word appeared in, and the translation of that sentence
 - the title and address (URL) of the page where you saved it
-- notes you add, and your flashcard review history (due dates, intervals)
-- your settings (target language, auto-save, translation provider and, if you enter one, a MyMemory e-mail address)
+- notes you add, and each word's review schedule (due dates, intervals)
+- your learning progress: XP, daily XP history, streak, lessons completed and achievements
+- your settings (target language, auto-save, daily goal, sound and listening options, translation provider and, if you enter one, a MyMemory e-mail address)
 
 This data never leaves your device unless you export it yourself. The extension has no servers. Uninstalling the extension, or using **Delete all cards** on the Import & export page, removes it.
 
@@ -32,6 +33,10 @@ This data never leaves your device unless you export it yourself. The extension 
    - your e-mail address, only if you entered one in the settings to get a higher free quota
 
    The extension does **not** send the page URL, the page title, other page content, or your saved cards. MyMemory's own privacy policy applies to these requests: https://mymemory.translated.net/doc/privacy.php. To keep everything on your device, choose **On-device only** in the settings.
+
+## Pronunciation (listening exercises)
+
+Lessons can read words aloud using your browser's built-in speech voices. WordHarvest prefers voices that run on your device. If your system only has an online voice for a language (for example Chrome's "Google" voices), Chrome sends the word to be spoken to Google to produce the audio. You can turn listening off in the settings.
 
 ## What the extension does not do
 

@@ -42,7 +42,7 @@ Use [`listing.md`](listing.md) for all text.
 | Category | Education |
 | Language | English |
 | Store icon | `store/icons/icon-128.png` |
-| Screenshots | everything in `store/screenshots/` (1280×800) |
+| Screenshots | everything in `store/screenshots/` (1280×800, up to 5 — the store's limit) |
 | Small promo tile | `store/promo-small-440x280.png` |
 | Homepage / support URL | the GitHub repo and its issues page |
 

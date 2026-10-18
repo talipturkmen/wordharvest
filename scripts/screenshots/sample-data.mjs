@@ -61,7 +61,40 @@ export function sampleStorage(now = Date.now()) {
       createdAt, updatedAt: createdAt,
     };
   });
+  storage.progress = sampleProgress(now);
   return storage;
+}
+
+const dayKey = (t) => {
+  const d = new Date(t);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+/** A learner on a 6-day streak who hasn't done today's lesson yet. */
+export function sampleProgress(now = Date.now()) {
+  const dailyXp = {};
+  [24, 31, 22, 18, 27, 25].forEach((xp, i) => (dailyXp[dayKey(now - (6 - i) * DAY)] = xp));
+  dailyXp[dayKey(now)] = 6;
+  return {
+    xp: 347,
+    dailyXp,
+    streak: { current: 6, longest: 6, lastDay: dayKey(now - DAY), freezes: 0 },
+    lessons: 14,
+    perfectLessons: 3,
+    achievements: Object.fromEntries(['first-harvest', 'first-lesson', 'flawless', 'streak-3', 'polyglot'].map((id) => [id, now - 3 * DAY])),
+  };
+}
+
+/** What the mocked service worker answers when a lesson finishes. */
+export function sampleLessonResult(now = Date.now()) {
+  const p = sampleProgress(now);
+  return {
+    progress: { ...p, xp: p.xp + 27, streak: { current: 7, longest: 7, lastDay: dayKey(now), freezes: 1 } },
+    streakExtended: true,
+    freezesUsed: 0,
+    freezeEarned: true,
+    achievements: ['streak-7'],
+  };
 }
 
 /** What the mocked translator returns in the article screenshot. */

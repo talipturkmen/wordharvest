@@ -9,7 +9,7 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { iconSvg } from '../assets/icon.mjs';
-import { sampleStorage, DICTIONARY } from './screenshots/sample-data.mjs';
+import { sampleStorage, sampleLessonResult, DICTIONARY } from './screenshots/sample-data.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dist = path.join(root, 'dist');
@@ -35,10 +35,55 @@ async function newPage(width, height, { mock = false, lang = 'es', dark = false 
   await page.setViewport({ width, height, deviceScaleFactor: 1 });
   await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: dark ? 'dark' : 'light' }]);
   if (mock) {
-    const data = { storage: sampleStorage(), dictionary: DICTIONARY, lang };
+    const data = { storage: sampleStorage(), dictionary: DICTIONARY, lang, lessonResult: sampleLessonResult() };
     await page.evaluateOnNewDocument(`${mockSource}\ninstallChromeMock(${JSON.stringify(data)});`);
   }
   return page;
+}
+
+/** Clicks Check/Continue if it's visible and enabled. */
+const press = (page) =>
+  page.evaluate(() => {
+    const b = document.getElementById('check');
+    if (b && !b.disabled && b.offsetParent) b.click();
+  });
+
+/** Answers the current exercise correctly, using the (mocked) saved cards. */
+async function solve(page) {
+  await page.evaluate(async () => {
+    const cards = Object.values(await chrome.storage.local.get(null)).filter((v) => v && v.examples);
+    const ex = document.getElementById('exercise');
+    const text = (sel) => ex.querySelector(sel)?.textContent.trim();
+    if (ex.querySelector('.match')) {
+      for (const w of ex.querySelectorAll('.tile[data-side="w"]')) {
+        w.click();
+        ex.querySelector(`.tile[data-side="t"][data-id="${w.dataset.id}"]`).click();
+      }
+      return;
+    }
+    if (ex.querySelector('.intro-card')) return;
+    const sentence = ex.querySelector('.ex-sentence');
+    let answer;
+    if (sentence) {
+      const before = sentence.firstChild.textContent;
+      const after = sentence.lastChild.textContent;
+      for (const c of cards) for (const e of c.examples) {
+        if (e.sentence.startsWith(before) && e.sentence.endsWith(after)) answer = e.sentence.slice(before.length, e.sentence.length - after.length);
+      }
+    } else {
+      const prompt = text('.big-word');
+      const label = text('.ex-label');
+      const card = cards.find((c) => c.term === prompt || c.translation === prompt);
+      if (card) answer = /mean\?$/.test(label) ? card.translation : card.term;
+    }
+    const option = [...ex.querySelectorAll('.choice, .chip')].find((b) => b.lastChild.textContent === answer);
+    if (option) option.click();
+    const input = ex.querySelector('input');
+    if (input) {
+      input.value = answer ?? '';
+      input.dispatchEvent(new Event('input'));
+    }
+  });
 }
 
 // ---- icons ----------------------------------------------------------------------
@@ -82,32 +127,48 @@ const shot = (name) => out('store/screenshots', name);
   await page.close();
 }
 
-// 2. Review card with the answer shown.
+// 2. Learn home: streak, daily goal, level, achievements.
 {
   const page = await newPage(1280, 800, { mock: true });
-  await page.goto(fileUrl(path.join(dist, 'review.html')) + '#review');
-  await page.waitForSelector('#rv-show:not([hidden])');
-  await page.click('#rv-show');
+  await page.goto(fileUrl(path.join(dist, 'review.html')) + '#learn');
+  await page.waitForSelector('#start-lesson:not([hidden])');
+  await new Promise((r) => setTimeout(r, 800)); // ring/bar transitions
+  await page.screenshot({ path: shot('2-learn-home.png') });
+
+  // 3. A fill-in-the-blank exercise, answered correctly.
+  await page.click('#start-lesson');
+  await page.waitForSelector('#lesson:not([hidden])');
+  for (let i = 0; i < 30 && !(await page.$('#exercise .chips')); i++) {
+    await solve(page);
+    await press(page);
+    if (await page.$('#lesson-footer.good, #lesson-footer.bad')) await press(page);
+  }
+  await solve(page);
+  await press(page);
+  await new Promise((r) => setTimeout(r, 300));
   await page.mouse.move(0, 0);
-  await page.screenshot({ path: shot('2-review.png') });
+  await page.screenshot({ path: shot('3-lesson.png') });
+
+  // 4. Lesson summary: play to the end.
+  await press(page); // continue past the screenshotted answer
+  for (let i = 0; i < 40 && (await page.$('#lesson:not([hidden])')); i++) {
+    await solve(page);
+    await press(page);
+    if (await page.$('#lesson-footer.good, #lesson-footer.bad')) await press(page);
+    await new Promise((r) => setTimeout(r, 400)); // a realistic lesson time on the summary
+  }
+  await page.waitForSelector('#summary:not([hidden])');
+  await new Promise((r) => setTimeout(r, 700)); // let the confetti spread a little
+  await page.screenshot({ path: shot('4-lesson-complete.png') });
   await page.close();
 }
 
-// 3. Browse & search.
-{
-  const page = await newPage(1280, 800, { mock: true });
-  await page.goto(fileUrl(path.join(dist, 'review.html')) + '#browse');
-  await page.waitForSelector('.card-item');
-  await page.screenshot({ path: shot('3-browse.png') });
-  await page.close();
-}
-
-// 4. Toolbar popup + dark mode review, framed with captions.
+// 5. Toolbar popup + settings, framed with captions.
 {
   const page = await newPage(1280, 800, { mock: true });
   await page.goto(fileUrl(out('scripts/screenshots/frame.html')));
   await new Promise((r) => setTimeout(r, 800));
-  await page.screenshot({ path: shot('4-popup-and-settings.png') });
+  await page.screenshot({ path: shot('5-popup-and-settings.png') });
   await page.close();
 }
 console.log('screenshots ✓');
@@ -124,7 +185,7 @@ console.log('screenshots ✓');
     mark { background: #fbbf24; color: #1f2330; border-radius: 4px; padding: 0 4px; }
   </style></head><body>
     ${iconSvg(104, { simple: false })}
-    <div><h1>WordHarvest</h1><p>Double-click a <mark>word</mark>,<br>keep the sentence,<br>review it later.</p></div>
+    <div><h1>WordHarvest</h1><p>Double-click a <mark>word</mark>,<br>keep the sentence,<br>learn it daily 🔥</p></div>
   </body></html>`);
   await page.screenshot({ path: out('store', 'promo-small-440x280.png') });
   await page.close();

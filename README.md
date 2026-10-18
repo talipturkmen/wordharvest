@@ -1,30 +1,47 @@
 # WordHarvest: learn words while you read
 
-A Chrome extension (Manifest V3) for picking up vocabulary from the pages you read:
+A Chrome extension (Manifest V3) for picking up vocabulary from the pages you read, and keeping it with short, game-like lessons:
 
 1. **Double-click a word** on any page. A popup shows its translation.
-2. **Save** it, or turn on auto-save. The word becomes a flashcard together with the sentence it came from, the page title and the URL.
-3. **Review** your cards with spaced repetition (SM-2: Again / Hard / Good / Easy).
+2. **Save** it, or turn on auto-save. The word is saved with the sentence it came from, the page title and the URL, and earns you XP.
+3. **Learn** it in Duolingo-style lessons. The app checks your answers itself, and a spaced-repetition schedule (SM-2) decides when each word comes back.
 
 ![Translate popup](store/screenshots/1-translate-popup.png)
 
-| Review | Browse |
+| Learn | Lesson |
 | --- | --- |
-| ![Review](store/screenshots/2-review.png) | ![Browse](store/screenshots/3-browse.png) |
+| ![Learn home](store/screenshots/2-learn-home.png) | ![Lesson](store/screenshots/3-lesson.png) |
+| ![Lesson complete](store/screenshots/4-lesson-complete.png) | ![Popup and settings](store/screenshots/5-popup-and-settings.png) |
 
 ## Features
 
+**Reading**
 - The translation popup is rendered in a **closed Shadow DOM**, so page CSS can't change it and it can't change the page.
 - **Sentence capture:** the extension finds the nearest block element around the word and splits its text into sentences on `. ! ? 。！？…` and similar marks, using the locale-aware `Intl.Segmenter` with a regex fallback.
-- **No duplicate cards:** saving the same word again from another page adds the new sentence as another example on the existing card.
+- **No duplicates:** saving the same word again from another page adds the new sentence as another example on the existing word.
 - **Translation:** uses Chrome's built-in **on-device Translator + Language Detector APIs** when they are available, and falls back to the free **MyMemory** API. No API keys are needed.
 - **Language:** the source language is detected automatically, and you can change it in the popup. The target language is set on the options page (English by default).
-- **Review page:**
-  - spaced-repetition review with keyboard shortcuts
-  - browse, search, edit and delete cards
-  - **JSON / CSV export and import**, plus an **Anki-ready CSV** export
-- **Toolbar popup:** shows the number of saved words and cards due today, with a *Start review* button.
 - Double-clicks in inputs, textareas, selects and contenteditable areas are ignored.
+
+**Learning**
+- **Lessons** of about 10 exercises. Exercises get harder as you learn a word:
+  1. **New word** card, then pick its meaning
+  2. pick the meaning, or **listen** and pick it
+  3. **fill in the blank** in the sentence you saved, choosing from word chips
+  4. **type the missing word**; typos and missing accents count as nearly right
+  5. **match the pairs** bonus round
+- Wrong answers come back later in the same lesson.
+- **Grading:** answers are checked automatically and feed the SM-2 schedule: wrong → *again*, typo → *hard*, right → *good*, typed right on a strong word → *easy*.
+- **XP** for correct answers, combos (5+ in a row), finishing lessons, perfect lessons, and every new word you save.
+- **Daily goal** (10 / 20 / 30 / 50 XP), **streak** with a 7-day calendar, and **streak freezes** (earned every 7 days; each saves your streak if you miss a day).
+- **Levels**, **achievements** and **word strength** bars (new → mastered).
+- **Practice mode** when nothing is due: uses your weakest words and earns XP without changing the schedule.
+- Sound effects (synthesized, no audio files), confetti, and pronunciation through the browser's built-in voices. Each can be turned off.
+- Keyboard: **1–4** to pick an answer, **Enter** to check and continue.
+
+**Managing words**
+- Browse, search, edit and delete saved words.
+- **JSON / CSV export and import**, plus an **Anki-ready CSV** export.
 
 ## Install (development)
 
@@ -39,12 +56,12 @@ npm run build          # → dist/
 2. Turn on **Developer mode** (top right).
 3. Click **Load unpacked** and select the **`dist/`** folder.
 
-Open any article, double-click a word, and click **Save**. Click the toolbar icon to see your stats and start a review.
+Open any article, double-click a word, and click **Save**. Click the toolbar icon to see your streak and start a lesson.
 
 ```bash
 npm run watch          # rebuild on change, then click ↻ on the extension card in chrome://extensions
 npm run typecheck
-npm test               # unit tests: SM-2, merging, CSV, sentence splitting, MyMemory parsing
+npm test               # unit tests: SM-2, exercises, streaks/XP, merging, CSV, sentence splitting, MyMemory parsing
 npm run package        # typecheck + test + build + zip → release/wordharvest-<version>.zip
 npm run store-assets   # regenerate icons, screenshots and promo tile (uses your installed Chrome)
 ```
@@ -53,12 +70,12 @@ npm run store-assets   # regenerate icons, screenshots and promo tile (uses your
 
 | Where | What |
 | --- | --- |
-| Any web page | Double-click a word to see the popup. **Save** saves the card. **Esc** or a click outside closes the popup. Use the language menu if the language was detected wrong. |
-| Toolbar icon | Shows saved words and cards due today. **Start review** opens the review page. |
-| Review | **Space** shows the answer. **1–4** grades the card (Again / Hard / Good / Easy). **E** edits the card. |
-| Browse | Search across words, translations and sentences. Click a card to edit it, delete it, or reset its progress. |
-| Import & export | JSON (lossless), CSV (one row per example sentence), and Anki CSV export. JSON and CSV import merges into existing cards. |
-| Settings | Target language, auto-save, translating example sentences, translation provider, and an optional MyMemory e-mail for a higher free quota. |
+| Any web page | Double-click a word to see the popup. **Save** saves the word (+1 XP). **Esc** or a click outside closes the popup. Use the language menu if the language was detected wrong. |
+| Toolbar icon | Shows your streak, today's XP against your goal, and due words. **Start lesson** goes straight into a lesson. |
+| Learn | Home: streak, daily goal, level and achievements. **Start lesson**, or **Practice weak words** when nothing is due. In a lesson: **1–4** pick, **Enter** check / continue, **Skip** if you don't know. |
+| Browse | Search across words, translations and sentences. Bars show each word's strength. Click a word to edit it, delete it, or reset its progress. |
+| Import & export | JSON (lossless), CSV (one row per example sentence), and Anki CSV export. JSON and CSV import merges into existing words. |
+| Settings | Target language, auto-save, translating example sentences, daily goal, sound effects, listening exercises, translation provider, and an optional MyMemory e-mail for a higher free quota. |
 
 **Importing into Anki (2.1.55+):** use *File → Import* and choose the exported `wordharvest-anki-*.csv`. The file's header lines set the separator, the HTML option and the tags column. Choose the **Basic** note type.
 
@@ -70,23 +87,23 @@ npm run store-assets   # regenerate icons, screenshots and promo tile (uses your
 │   dblclick → word + sentence → detect language → translate → popup (Shadow DOM)  │
 │        │ on-device Translator / LanguageDetector run here (window-only APIs)     │
 └────────┼─────────────────────────────────────────────────────────────────────────┘
-         │ chrome.runtime.sendMessage  {translate | saveWord}
+         │ chrome.runtime.sendMessage  {translate | saveWord | completeLesson}
 ┌────────▼──────────── service worker (src/background/) ───────────┐
 │  • remote translation proxy (MyMemory; the only network access)  │
-│  • single, serialized writer for saved words → chrome.storage    │
+│  • single, serialized writer for words + progress (XP, streak)   │
 └────────┬─────────────────────────────────────────────────────────┘
-         │ chrome.storage.local  (one key per card + "settings")
+         │ chrome.storage.local  (one key per card + "progress" + "settings")
 ┌────────▼──────────── extension pages (src/pages/) ─────────────────────────────┐
-│  popup.html    stats + "Start review"                                          │
-│  review.html   #review (SM-2 session) · #browse (search/edit) · #data (import/export) │
+│  popup.html    streak, daily goal, due words + "Start lesson"                 │
+│  review.html   #learn (home, lessons) · #browse (search/edit) · #data (import/export) │
 │  options.html  settings                                                        │
 └────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 - **Content script** (`src/content/`): listens for `dblclick`, ignores editable targets, and cleans the selection. It walks up to the nearest block element and builds that block's text. It then finds the sentence that contains the word, detects the language from that sentence (more reliable than from a single word), translates the word, and renders the popup. Chrome's on-device Translator and LanguageDetector APIs only exist in window contexts, not in service workers, so they run here.
-- **Service worker** (`src/background/`): saves every card for the content script. It writes one card at a time, so saves from several tabs can't race each other. It also calls the remote translation provider. The service worker is the only place with a host permission for the translation API.
-- **Pages** (`src/pages/`): plain TypeScript, no framework. They read and write `chrome.storage.local` directly.
-- **Shared logic** (`src/shared/`): pure functions with unit tests (`srs.ts`, `cards.ts`, `csv.ts`, `highlight.ts`) and thin storage wrappers (`storage.ts`, `settings.ts`).
+- **Service worker** (`src/background/`): saves every word for the content script and records every finished lesson. It does one write at a time, so saves from several tabs and lesson results can't overwrite each other. It also awards XP, updates the streak and unlocks achievements. It also calls the remote translation provider. The service worker is the only place with a host permission for the translation API.
+- **Pages** (`src/pages/`): plain TypeScript, no framework. `learn/home.ts` shows progress and starts lessons; `learn/lesson.ts` runs them (rendering, answer checking, rescheduling words, summary); `fx.ts` has sounds, speech and confetti. Pages write words directly and send lesson results to the service worker.
+- **Shared logic** (`src/shared/`): pure functions with unit tests (`srs.ts` scheduling, `exercises.ts` lesson building and answer checking, `progress.ts` XP / streak / levels / achievements, `cards.ts`, `csv.ts`, `highlight.ts`) and thin storage wrappers (`storage.ts`, `settings.ts`).
 
 Build: esbuild bundles each entry point (content script and pages as IIFE, service worker as ESM) into `dist/`, and copies `public/` (manifest, HTML, CSS, icons) next to them. The output is not minified, which makes Chrome Web Store reviews faster.
 
@@ -107,7 +124,16 @@ interface Card {
   srs: { due: number; interval: number; ease: number; reps: number; lapses: number; lastReviewed?: number };
   createdAt: number; updatedAt: number;
 }
-// key: "settings" → { targetLang, autoSave, translateSentences, provider: "auto"|"builtin"|"remote", myMemoryEmail }
+// key: "progress"
+interface Progress {
+  xp: number;
+  dailyXp: Record<string, number>;   // "YYYY-MM-DD" → XP (last 90 days)
+  streak: { current: number; longest: number; lastDay: string | null; freezes: number };
+  lessons: number; perfectLessons: number;
+  achievements: Record<string, number>;   // id → unlock time
+}
+// key: "settings" → { targetLang, autoSave, translateSentences, provider: "auto"|"builtin"|"remote",
+//                     myMemoryEmail, dailyGoal, soundEffects, listening }
 ```
 
 Each card has its own key, so saving a word writes about 1 KB instead of rewriting the whole collection. `chrome.storage.local` holds 10 MB, which is roughly 10,000 cards with a few example sentences each. If you need more, add the `unlimitedStorage` permission or move to IndexedDB. Only `src/shared/storage.ts` would need to change.
@@ -213,8 +239,8 @@ public/            manifest.json, HTML pages, styles.css, icons/
 src/content/       content script: double-click handling, sentence capture, Shadow-DOM popup
 src/background/    service worker: serialized saves, remote translation proxy
 src/translate/     provider interface, Chrome on-device provider, MyMemory, registry, chain
-src/shared/        types, SM-2 scheduler, card merge/validation, CSV/Anki, storage, settings
-src/pages/         toolbar popup, review/browse/data page, options page
+src/shared/        types, SM-2 scheduler, exercises, progress/XP/streaks, card merge/validation, CSV/Anki, storage, settings
+src/pages/         toolbar popup, learn (home + lessons), browse, import/export, options page
 test/              unit tests (node --test)
 scripts/           build, zip, store-asset generation (headless Chrome + mocked chrome.* API)
 store/             listing, privacy policy, permission answers, publishing guide, images

@@ -2,7 +2,7 @@
 // Fakes the parts of the chrome.* API the extension uses, plus the on-device
 // Translator/LanguageDetector, so the real built UI can render from file:// URLs.
 // eslint-disable-next-line no-unused-vars
-function installChromeMock({ storage, dictionary, lang }) {
+function installChromeMock({ storage, dictionary, lang, lessonResult }) {
   const clone = (v) => (v === undefined ? v : JSON.parse(JSON.stringify(v)));
   const store = clone(storage);
   const listeners = [];
@@ -44,7 +44,8 @@ function installChromeMock({ storage, dictionary, lang }) {
         getURL: (p) => p,
         async sendMessage(msg) {
           if (msg.type === 'translate') return { ok: true, value: { text: translate(msg.text), provider: 'MyMemory' } };
-          if (msg.type === 'saveWord') return { ok: true, value: { status: 'created', card: {} } };
+          if (msg.type === 'saveWord') return { ok: true, value: { status: 'created', card: {}, xp: 1 } };
+          if (msg.type === 'completeLesson') return { ok: true, value: lessonResult };
           return { ok: false, error: 'unknown message' };
         },
       },
@@ -52,6 +53,14 @@ function installChromeMock({ storage, dictionary, lang }) {
       tabs: { create: async () => ({}) },
     },
   });
+
+  // No real voices in headless Chrome; pretend the learner's language has one.
+  if (window.speechSynthesis) {
+    const voice = { lang: `${lang}-ES`, name: 'Mock', default: true, localService: true, voiceURI: 'mock' };
+    speechSynthesis.getVoices = () => [voice];
+    speechSynthesis.speak = () => {};
+  }
+  window.AudioContext = class { constructor() { throw new Error('muted'); } };
 
   window.Translator = {
     availability: async () => 'available',
