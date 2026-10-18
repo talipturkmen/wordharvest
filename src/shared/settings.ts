@@ -14,6 +14,11 @@ export interface Settings {
   provider: ProviderPreference;
   /** Optional e-mail for MyMemory: raises the free quota from 5k to 50k chars/day. */
   myMemoryEmail: string;
+  /** XP per day that counts as meeting the daily goal. */
+  dailyGoal: number;
+  soundEffects: boolean;
+  /** Use the browser's speech synthesis for listening exercises. */
+  listening: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -22,6 +27,9 @@ export const DEFAULT_SETTINGS: Settings = {
   translateSentences: true,
   provider: 'auto',
   myMemoryEmail: '',
+  dailyGoal: 20,
+  soundEffects: true,
+  listening: true,
 };
 
 const KEY = 'settings';

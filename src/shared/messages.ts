@@ -1,13 +1,26 @@
 // Typed messages between the content script / pages and the service worker.
 import type { SaveWordInput, SaveWordResult } from './types.ts';
+import type { Progress } from './progress.ts';
 
 export type Message =
   | { type: 'translate'; text: string; source: string; target: string }
-  | { type: 'saveWord'; input: SaveWordInput };
+  | { type: 'saveWord'; input: SaveWordInput }
+  | { type: 'completeLesson'; xp: number; perfect: boolean };
+
+export interface LessonResult {
+  progress: Progress;
+  streakExtended: boolean;
+  freezesUsed: number;
+  freezeEarned: boolean;
+  /** Ids of achievements unlocked by this lesson. */
+  achievements: string[];
+}
 
 export interface ResponseMap {
   translate: { text: string; provider: string };
-  saveWord: SaveWordResult;
+  /** `xp` is what the save earned (1 for a new word, 0 otherwise). */
+  saveWord: SaveWordResult & { xp: number };
+  completeLesson: LessonResult;
 }
 
 export type Reply<T> = { ok: true; value: T } | { ok: false; error: string };

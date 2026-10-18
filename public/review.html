@@ -12,7 +12,7 @@
   <header class="topbar">
     <span class="brand"><img src="icons/icon-32.png" width="22" height="22" alt=""> WordHarvest</span>
     <nav class="tabs">
-      <a href="#review" data-view="review">Review</a>
+      <a href="#learn" data-view="learn">Learn</a>
       <a href="#browse" data-view="browse">Browse</a>
       <a href="#data" data-view="data">Import &amp; export</a>
     </nav>
@@ -20,33 +20,63 @@
     <a class="btn link" href="options.html">Settings</a>
   </header>
 
-  <!-- Review -->
-  <main id="view-review" hidden>
-    <div class="progress"><span id="rv-left"></span><span id="rv-done"></span></div>
+  <!-- Learn -->
+  <main id="view-learn" hidden>
+    <!-- Home: streak, goal, level, start button, achievements -->
+    <section id="home">
+      <div id="home-welcome" class="panel empty" hidden></div>
+      <div id="home-main">
+        <div class="stat-cards">
+          <div class="stat-card streak-card">
+            <div class="stat-head"><span class="flame" id="streak-flame">🔥</span><span><b id="streak-count">0</b> day streak</span></div>
+            <div id="week" class="week"></div>
+            <p id="streak-note" class="muted small"></p>
+          </div>
+          <div class="stat-card">
+            <div class="stat-head"><svg class="ring" viewBox="0 0 36 36" aria-hidden="true"><circle class="ring-bg" cx="18" cy="18" r="15.9"/><circle id="goal-ring" class="ring-fg" cx="18" cy="18" r="15.9"/></svg>
+              <span><b id="goal-xp">0</b> / <span id="goal-target">20</span> XP today</span></div>
+            <p id="goal-note" class="muted small"></p>
+          </div>
+          <div class="stat-card">
+            <div class="stat-head"><span class="level-badge" id="level">1</span><span><b id="xp-total">0</b> XP total</span></div>
+            <div class="bar"><div id="level-bar"></div></div>
+            <p id="level-note" class="muted small"></p>
+          </div>
+        </div>
 
-    <div id="rv-empty" class="panel empty" hidden></div>
+        <div class="cta">
+          <h2 id="cta-title"></h2>
+          <p id="cta-sub" class="muted"></p>
+          <button id="start-lesson" class="btn3d green big">Start lesson</button>
+          <button id="start-practice" class="btn3d ghost">Practice weak words</button>
+        </div>
 
-    <article id="rv-card" class="flashcard" hidden>
-      <div class="term-row"><h1 id="rv-term" class="term"></h1><span id="rv-lang" class="badge"></span></div>
-      <p id="rv-sentence" class="sentence"></p>
-      <div id="rv-back" class="back" hidden>
-        <div id="rv-translation" class="translation"></div>
-        <p id="rv-sentence-tr" class="sentence-tr"></p>
-        <p id="rv-notes" class="notes"></p>
-        <p id="rv-source" class="source"></p>
+        <section class="panel">
+          <h2>Achievements</h2>
+          <div id="badges" class="badges"></div>
+        </section>
       </div>
-    </article>
+    </section>
 
-    <div id="rv-actions" class="actions" hidden>
-      <button id="rv-show" class="btn primary">Show answer <kbd>Space</kbd></button>
-      <div id="rv-grades" class="grades" hidden>
-        <button class="btn grade again" data-grade="again">Again <small></small></button>
-        <button class="btn grade hard" data-grade="hard">Hard <small></small></button>
-        <button class="btn grade good" data-grade="good">Good <small></small></button>
-        <button class="btn grade easy" data-grade="easy">Easy <small></small></button>
+    <!-- Lesson -->
+    <section id="lesson" class="lesson" hidden>
+      <div class="lesson-top">
+        <button id="quit" class="icon-btn" title="Quit lesson" aria-label="Quit lesson">✕</button>
+        <div class="lesson-bar"><div id="lesson-progress"></div></div>
+        <span id="combo" class="combo" aria-live="polite"></span>
       </div>
-    </div>
-    <div class="below"><button id="rv-edit" class="btn link" hidden>Edit card <kbd>E</kbd></button></div>
+      <div id="exercise" class="exercise"></div>
+      <footer id="lesson-footer" class="lesson-footer">
+        <div class="footer-inner">
+          <div id="feedback" class="feedback" aria-live="assertive"></div>
+          <button id="skip" class="btn3d ghost">Skip</button>
+          <button id="check" class="btn3d green" disabled>Check</button>
+        </div>
+      </footer>
+    </section>
+
+    <!-- Summary -->
+    <section id="summary" class="summary" hidden></section>
   </main>
 
   <!-- Browse -->

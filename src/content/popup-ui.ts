@@ -67,7 +67,7 @@ select {
 const SAVE_LABEL: Record<PopupState['save'], string> = {
   idle: 'Save',
   saving: 'Saving…',
-  created: 'Saved ✓',
+  created: 'Saved ✓ +1 XP',
   merged: 'Example added ✓',
   duplicate: 'Already saved ✓',
   error: 'Retry',

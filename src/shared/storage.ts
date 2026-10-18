@@ -3,6 +3,7 @@
 import type { Card, SaveWordInput, SaveWordResult } from './types.ts';
 import { applySave, CARD_KEY_PREFIX, cardId, mergeCards, storageKey } from './cards.ts';
 import { isDueToday } from './srs.ts';
+import { emptyProgress, type Progress } from './progress.ts';
 
 export async function getAllCards(): Promise<Card[]> {
   const all = await chrome.storage.local.get(null);
@@ -77,5 +78,25 @@ export async function getStats(now = Date.now()): Promise<{ total: number; dueTo
 export function onCardsChanged(cb: () => void): void {
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area === 'local' && Object.keys(changes).some((k) => k.startsWith(CARD_KEY_PREFIX))) cb();
+  });
+}
+
+const PROGRESS_KEY = 'progress';
+
+export async function getProgress(): Promise<Progress> {
+  const { [PROGRESS_KEY]: stored } = await chrome.storage.local.get(PROGRESS_KEY);
+  const empty = emptyProgress();
+  const p = stored as Partial<Progress> | undefined;
+  return { ...empty, ...p, streak: { ...empty.streak, ...p?.streak } };
+}
+
+/** Only the service worker writes progress (see src/background). */
+export async function putProgress(progress: Progress): Promise<void> {
+  await chrome.storage.local.set({ [PROGRESS_KEY]: progress });
+}
+
+export function onProgressChanged(cb: () => void): void {
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes[PROGRESS_KEY]) cb();
   });
 }

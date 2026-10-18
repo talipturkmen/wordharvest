@@ -5,6 +5,7 @@ import { formatDays, isDueToday, startOfDay, DAY } from '../../shared/srs.ts';
 import { languageName } from '../../shared/languages.ts';
 import { $, h, renderHighlighted } from '../dom.ts';
 import { openEditor } from './editor.ts';
+import { strength } from '../../shared/exercises.ts';
 
 const PAGE = 100;
 let all: Card[] = [];
@@ -43,6 +44,13 @@ function dueLabel(c: Card, now: number): HTMLElement {
   return h('span', { text: `in ${formatDays(Math.round((startOfDay(c.srs.due) - startOfDay(now)) / DAY))}` });
 }
 
+function strengthBars(c: Card): HTMLElement {
+  const s = strength(c);
+  const label = s === 0 ? 'New' : s === 5 ? 'Mastered' : `Strength ${s}/5`;
+  return h('span', { class: `strength s${s}`, title: label, 'aria-label': label },
+    ...Array.from({ length: 5 }, (_, i) => h('i', { class: i < s ? 'on' : '' })));
+}
+
 function item(c: Card, now: number): HTMLLIElement {
   const latest = c.examples[c.examples.length - 1];
   const ex = h('div', { class: 'ex' });
@@ -51,7 +59,7 @@ function item(c: Card, now: number): HTMLLIElement {
     'li',
     { class: 'card-item', tabindex: '0', role: 'button' },
     h('div', { class: 't' }, c.term, h('span', { class: 'badge', title: languageName(c.lang), text: c.lang }), ' ', h('span', { class: 'tr', text: `— ${c.translation}` })),
-    h('div', { class: 'meta' }, dueLabel(c, now), c.examples.length > 1 ? ` · ${c.examples.length} examples` : ''),
+    h('div', { class: 'meta' }, strengthBars(c), dueLabel(c, now), c.examples.length > 1 ? ` · ${c.examples.length} examples` : ''),
     latest ? ex : null,
   );
   const edit = async () => {

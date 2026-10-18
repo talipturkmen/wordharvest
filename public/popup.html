@@ -8,13 +8,16 @@
 </head>
 <body class="popup">
   <header class="brand"><img src="icons/icon-32.png" width="20" height="20" alt=""> WordHarvest</header>
-  <div class="stats">
-    <div class="stat"><span id="total" class="num">–</span><span class="label">saved words</span></div>
-    <div class="stat due"><span id="due" class="num">–</span><span class="label">due today</span></div>
+  <div class="stats three">
+    <div class="stat streak"><span class="num"><span id="flame" class="flame-sm">🔥</span><span id="streak">–</span></span><span class="label">day streak</span></div>
+    <div class="stat goal"><span class="num"><span id="today">–</span><small>/<span id="goal">20</span></small></span><span class="label">XP today</span>
+      <span class="mini-bar"><span id="goal-bar"></span></span></div>
+    <div class="stat due"><span id="due" class="num">–</span><span class="label">due words</span></div>
   </div>
-  <button id="start" class="btn primary block">Start review</button>
+  <p id="nudge" class="nudge" hidden></p>
+  <button id="start" class="btn3d green block">Start lesson</button>
   <nav class="links">
-    <a href="review.html#browse" data-open>Browse cards</a>
+    <a href="review.html#browse" data-open>Browse words</a>
     <a href="review.html#data" data-open>Import / export</a>
     <a href="options.html" data-open>Settings</a>
   </nav>
