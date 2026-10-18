@@ -7,15 +7,15 @@ Copy these into the **Store listing** tab of the developer dashboard.
 The name comes from `name` in `public/manifest.json`:
 
 ```
-WordHarvest: Translate & Save Words as Flashcards
+WordHarvest: Translate, Dictionary & Vocabulary Flashcards
 ```
 
 ## Short description / summary (≤ 132 chars)
 
-The summary comes from `description` in `public/manifest.json` (113 chars):
+The summary comes from `description` in `public/manifest.json` (129 chars):
 
 ```
-Double-click any word to translate it, save it with the sentence it came from, and review it later as flashcards.
+Pop-up translator and dictionary: double-click any word to translate it, save it with its sentence, and learn it with flashcards.
 ```
 
 ## Detailed description

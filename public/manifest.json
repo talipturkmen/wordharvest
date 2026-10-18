@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "WordHarvest: Translate & Save Words as Flashcards",
+  "name": "WordHarvest: Translate, Dictionary & Vocabulary Flashcards",
   "short_name": "WordHarvest",
   "version": "1.0.0",
-  "description": "Double-click any word to translate it, save it with the sentence it came from, and review it later as flashcards.",
+  "description": "Pop-up translator and dictionary: double-click any word to translate it, save it with its sentence, and learn it with flashcards.",
   "minimum_chrome_version": "116",
   "icons": {
     "16": "icons/icon-16.png",
