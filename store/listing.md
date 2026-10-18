@@ -31,7 +31,9 @@ HARVEST WORDS WHILE YOU READ
 • The sentence, page title and link are saved with the word. Found it again elsewhere? The new sentence is added to the same word.
 
 LEARN WITH GAME-LIKE LESSONS
-• Exercises that grow with you: meet the word, pick its meaning, listen, fill in the blank in your own sentence, type the missing word, match the pairs.
+• Exercises that grow with you: meet the word, pick its meaning, listen, fill in the blank, build the sentence from word tiles, translate whole sentences, type what you hear, match the pairs.
+• More than one sentence per word: practise with the sentence you saved, others from your reading, and free example sentences from Tatoeba.
+• Learning several languages? Each lesson sticks to one language, and you can switch with one click.
 • Answers are checked for you — small typos and missing accents still count.
 • Mistakes come back at the end of the lesson so you get them right.
 • Smart scheduling (spaced repetition) brings each word back right before you'd forget it.

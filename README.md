@@ -24,12 +24,17 @@ A Chrome extension (Manifest V3) for picking up vocabulary from the pages you re
 - Double-clicks in inputs, textareas, selects and contenteditable areas are ignored.
 
 **Learning**
-- **Lessons** of about 10 exercises. Exercises get harder as you learn a word:
-  1. **New word** card, then pick its meaning
-  2. pick the meaning, or **listen** and pick it
-  3. **fill in the blank** in the sentence you saved, choosing from word chips
-  4. **type the missing word**; typos and missing accents count as nearly right
-  5. **match the pairs** bonus round
+- **Language groups:** pick a language at the top of the Learn page; each lesson uses one language only. With *All languages*, the next lesson uses the language with the most words due. Browse can filter by language and groups words under language headings.
+- **Lessons** of about 10 exercises. Each word gets a random mix of the exercise types that suit how well you know it:
+  1. **New word** card (with every sentence it's known from), then pick its meaning
+  2. pick the meaning, **listen** and pick it, **what does this sentence mean?**, fill in the blank from word chips
+  3. **build the sentence** from word tiles, **type the missing word**, **type what you hear**
+  4. a **match the pairs** bonus round
+- **More sentences than the one you saved.** Exercises draw on every sentence a word appears in:
+  - the sentence(s) you saved it from
+  - other sentences you saved that contain the word ("From your reading")
+  - up to 4 short sentences with human translations from [Tatoeba](https://tatoeba.org) (CC BY 2.0 FR, credited on screen), fetched the first time a word is practised and refreshed monthly. This can be turned off in Settings.
+- Typos and missing accents count as nearly right.
 - Wrong answers come back later in the same lesson.
 - **Grading:** answers are checked automatically and feed the SM-2 schedule: wrong → *again*, typo → *hard*, right → *good*, typed right on a strong word → *easy*.
 - **XP** for correct answers, combos (5+ in a row), finishing lessons, perfect lessons, and every new word you save.
@@ -72,10 +77,10 @@ npm run store-assets   # regenerate icons, screenshots and promo tile (uses your
 | --- | --- |
 | Any web page | Double-click a word to see the popup. **Save** saves the word (+1 XP). **Esc** or a click outside closes the popup. Use the language menu if the language was detected wrong. |
 | Toolbar icon | Shows your streak, today's XP against your goal, and due words. **Start lesson** goes straight into a lesson. |
-| Learn | Home: streak, daily goal, level and achievements. **Start lesson**, or **Practice weak words** when nothing is due. In a lesson: **1–4** pick, **Enter** check / continue, **Skip** if you don't know. |
-| Browse | Search across words, translations and sentences. Bars show each word's strength. Click a word to edit it, delete it, or reset its progress. |
+| Learn | Home: language switcher, streak, daily goal, level and achievements. **Start lesson**, or **Practice weak words** when nothing is due. In a lesson: **1–4** pick, **Enter** check / continue, **Skip** if you don't know. |
+| Browse | Filter by language, search across words, translations and sentences. Bars show each word's strength. Click a word to edit it, delete it, or reset its progress. |
 | Import & export | JSON (lossless), CSV (one row per example sentence), and Anki CSV export. JSON and CSV import merges into existing words. |
-| Settings | Target language, auto-save, translating example sentences, daily goal, sound effects, listening exercises, translation provider, and an optional MyMemory e-mail for a higher free quota. |
+| Settings | Target language, auto-save, translating example sentences, daily goal, sound effects, listening exercises, extra Tatoeba sentences, translation provider, and an optional MyMemory e-mail for a higher free quota. |
 
 **Importing into Anki (2.1.55+):** use *File → Import* and choose the exported `wordharvest-anki-*.csv`. The file's header lines set the separator, the HTML option and the tags column. Choose the **Basic** note type.
 
@@ -102,8 +107,8 @@ npm run store-assets   # regenerate icons, screenshots and promo tile (uses your
 
 - **Content script** (`src/content/`): listens for `dblclick`, ignores editable targets, and cleans the selection. It walks up to the nearest block element and builds that block's text. It then finds the sentence that contains the word, detects the language from that sentence (more reliable than from a single word), translates the word, and renders the popup. Chrome's on-device Translator and LanguageDetector APIs only exist in window contexts, not in service workers, so they run here.
 - **Service worker** (`src/background/`): saves every word for the content script and records every finished lesson. It does one write at a time, so saves from several tabs and lesson results can't overwrite each other. It also awards XP, updates the streak and unlocks achievements. It also calls the remote translation provider. The service worker is the only place with a host permission for the translation API.
-- **Pages** (`src/pages/`): plain TypeScript, no framework. `learn/home.ts` shows progress and starts lessons; `learn/lesson.ts` runs them (rendering, answer checking, rescheduling words, summary); `fx.ts` has sounds, speech and confetti. Pages write words directly and send lesson results to the service worker.
-- **Shared logic** (`src/shared/`): pure functions with unit tests (`srs.ts` scheduling, `exercises.ts` lesson building and answer checking, `progress.ts` XP / streak / levels / achievements, `cards.ts`, `csv.ts`, `highlight.ts`) and thin storage wrappers (`storage.ts`, `settings.ts`).
+- **Pages** (`src/pages/`): plain TypeScript, no framework. `learn/home.ts` shows progress and the language switcher and starts lessons; `learn/enrich.ts` fetches Tatoeba sentences in the background; `learn/lesson.ts` runs them (rendering, answer checking, rescheduling words, summary); `fx.ts` has sounds, speech and confetti. Pages write words directly and send lesson results to the service worker.
+- **Shared logic** (`src/shared/`): pure functions with unit tests (`srs.ts` scheduling, `exercises.ts` lesson building and answer checking, `contexts.ts` every sentence a word appears in, `tatoeba.ts` extra sentences, `progress.ts` XP / streak / levels / achievements, `cards.ts`, `csv.ts`, `highlight.ts`) and thin storage wrappers (`storage.ts`, `settings.ts`).
 
 Build: esbuild bundles each entry point (content script and pages as IIFE, service worker as ESM) into `dist/`, and copies `public/` (manifest, HTML, CSS, icons) next to them. The output is not minified, which makes Chrome Web Store reviews faster.
 
@@ -122,6 +127,10 @@ interface Card {
     url: string; title: string; addedAt: number;
   }[];
   srs: { due: number; interval: number; ease: number; reps: number; lapses: number; lastReviewed?: number };
+  more?: {               // extra sentences from Tatoeba (refreshed every 30 days)
+    sentences: { text: string; translation?: string; source: 'tatoeba'; id: number; author?: string }[];
+    fetchedAt: number; lang: string;
+  };
   createdAt: number; updatedAt: number;
 }
 // key: "progress"
@@ -133,7 +142,7 @@ interface Progress {
   achievements: Record<string, number>;   // id → unlock time
 }
 // key: "settings" → { targetLang, autoSave, translateSentences, provider: "auto"|"builtin"|"remote",
-//                     myMemoryEmail, dailyGoal, soundEffects, listening }
+//                     myMemoryEmail, dailyGoal, soundEffects, listening, moreSentences, activeLang }
 ```
 
 Each card has its own key, so saving a word writes about 1 KB instead of rewriting the whole collection. `chrome.storage.local` holds 10 MB, which is roughly 10,000 cards with a few example sentences each. If you need more, add the `unlimitedStorage` permission or move to IndexedDB. Only `src/shared/storage.ts` would need to change.
@@ -212,7 +221,7 @@ The extension deliberately does **not** request these:
 
 ## Privacy
 
-Everything is stored locally. Text is sent to MyMemory only when the online fallback is used, and only the word or sentence being translated. See [`store/privacy-policy.md`](store/privacy-policy.md), published at https://talipturkmen.github.io/wordharvest/privacy-policy/.
+Everything is stored locally. Text is sent to MyMemory only when the online fallback is used, and only the word or sentence being translated. When extra sentences are on, the word being practised (and its language codes) is sent to Tatoeba's public API. Tatoeba's API allows cross-origin requests, so this needs no extra permission. See [`store/privacy-policy.md`](store/privacy-policy.md), published at https://talipturkmen.github.io/wordharvest/privacy-policy/.
 
 ## Releasing a new version
 

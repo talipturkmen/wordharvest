@@ -34,6 +34,10 @@ This data never leaves your device unless you export it yourself. The extension 
 
    The extension does **not** send the page URL, the page title, other page content, or your saved cards. MyMemory's own privacy policy applies to these requests: https://mymemory.translated.net/doc/privacy.php. To keep everything on your device, choose **On-device only** in the settings.
 
+## Extra example sentences (Tatoeba)
+
+To give you more practice than the one sentence you saved, WordHarvest can fetch a few short example sentences for the words you are practising from Tatoeba (`api.tatoeba.org`), a free, open collection of sentences and translations. When this is on, the extension sends Tatoeba only the word being practised and the two language codes (for example "aprovechar", Spanish → English). It does not send the page, the sentence you saved, or anything else. Fetched sentences are stored with the word on your device. You can turn this off in the settings ("More example sentences from Tatoeba").
+
 ## Pronunciation (listening exercises)
 
 Lessons can read words aloud using your browser's built-in speech voices. WordHarvest prefers voices that run on your device. If your system only has an online voice for a language (for example Chrome's "Google" voices), Chrome sends the word to be spoken to Google to produce the audio. You can turn listening off in the settings.
@@ -41,7 +45,7 @@ Lessons can read words aloud using your browser's built-in speech voices. WordHa
 ## What the extension does not do
 
 - It does not collect analytics, telemetry or personal information.
-- It does not read or transmit page content, except the selected word and its sentence when you double-click a word, as described above.
+- It does not read or transmit page content, except the selected word and its sentence when you double-click a word, and the word being practised when extra sentences are on, as described above.
 - It does not sell, rent, or share your data with third parties, and it does not use your data for advertising or creditworthiness.
 - It does not use or transfer your data for any purpose unrelated to its single purpose: translating words and helping you learn them.
 
