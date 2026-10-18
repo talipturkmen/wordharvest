@@ -5,7 +5,7 @@ Paste these into the **Privacy practices** tab of the Chrome Web Store developer
 ## Single purpose description
 
 ```
-Context Cards helps users learn vocabulary while reading: double-click a word on a web page to see its translation, save it with the sentence it appeared in, and review saved words as spaced-repetition flashcards.
+WordHarvest helps users learn vocabulary while reading: double-click a word on a web page to see its translation, save it with the sentence it appeared in, and review saved words as spaced-repetition flashcards.
 ```
 
 ## Permission justifications
@@ -37,5 +37,5 @@ Check all three certifications:
 ## Privacy policy URL
 
 ```
-https://talipturkmen.github.io/wordle/privacy-policy/
+https://talipturkmen.github.io/wordharvest/privacy-policy/
 ```

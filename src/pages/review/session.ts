@@ -93,7 +93,7 @@ async function renderEmpty(all?: Card[]): Promise<void> {
   if (cards.length === 0) {
     box.replaceChildren(
       h('div', { class: 'big', text: '📖' }),
-      h('h2', { text: 'Welcome to Context Cards' }),
+      h('h2', { text: 'Welcome to WordHarvest' }),
       h(
         'ol',
         {},

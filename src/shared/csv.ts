@@ -154,7 +154,7 @@ export function cardsToAnkiCsv(cards: readonly Card[]): string {
     const back = [escapeHtml(c.translation)];
     if (ex?.translation) back.push(`<br><br><i>${escapeHtml(ex.translation)}</i>`);
     if (c.notes) back.push(`<br><br>${escapeHtml(c.notes)}`);
-    const tags = ['context-cards', `lang::${c.lang}`].join(' ');
+    const tags = ['wordharvest', `lang::${c.lang}`].join(' ');
     return [front.join(''), back.join(''), tags];
   });
   const header = '#separator:Comma\r\n#html:true\r\n#columns:Front,Back,Tags\r\n#tags column:3\r\n';

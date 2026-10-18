@@ -7,7 +7,7 @@ Copy these into the **Store listing** tab of the developer dashboard.
 The name comes from `name` in `public/manifest.json`:
 
 ```
-Context Cards: Learn Words While You Read
+WordHarvest: Translate & Save Words as Flashcards
 ```
 
 ## Short description / summary (≤ 132 chars)
@@ -23,13 +23,13 @@ Double-click any word to translate it, save it with the sentence it came from, a
 ```
 Learn vocabulary from what you actually read.
 
-Context Cards turns any web page into a language lesson. Double-click a word you don't know and a small popup shows its translation right next to it. Save it, and the word becomes a flashcard together with the sentence you found it in — so you remember what it means and how it is used.
+WordHarvest turns any web page into a language lesson. Double-click a word you don't know and a small popup shows its translation right next to it. Save it, and the word becomes a flashcard together with the sentence you found it in — so you remember what it means and how it is used.
 
 HOW IT WORKS
 • Double-click any word on any website to see its translation.
 • Click Save (or turn on auto-save) to keep it. The full sentence, page title and link are saved with it.
 • Found the same word on another page? Its new sentence is added as another example on the same card — no duplicates.
-• Review your cards with spaced repetition. Rate each card Again, Hard, Good or Easy, and Context Cards schedules it for the right moment (SM-2 algorithm).
+• Review your cards with spaced repetition. Rate each card Again, Hard, Good or Easy, and WordHarvest schedules it for the right moment (SM-2 algorithm).
 
 FEATURES
 • Translation popup that never breaks the page's layout.
@@ -43,7 +43,7 @@ FEATURES
 
 Double-clicks inside text fields and editors are ignored, so it never gets in the way of typing.
 
-Open source (MIT): https://github.com/talipturkmen/wordle
+Open source (MIT): https://github.com/talipturkmen/wordharvest
 ```
 
 ## Category
@@ -69,6 +69,6 @@ Regenerate all of them with `npm run store-assets`.
 
 ## Additional fields
 
-- **Homepage URL:** https://github.com/talipturkmen/wordle
-- **Support URL:** https://github.com/talipturkmen/wordle/issues
-- **Privacy policy URL** (Privacy tab): https://talipturkmen.github.io/wordle/privacy-policy/
+- **Homepage URL:** https://github.com/talipturkmen/wordharvest
+- **Support URL:** https://github.com/talipturkmen/wordharvest/issues
+- **Privacy policy URL** (Privacy tab): https://talipturkmen.github.io/wordharvest/privacy-policy/

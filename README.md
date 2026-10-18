@@ -1,4 +1,4 @@
-# Context Cards: learn words while you read
+# WordHarvest: learn words while you read
 
 A Chrome extension (Manifest V3) for picking up vocabulary from the pages you read:
 
@@ -45,7 +45,7 @@ Open any article, double-click a word, and click **Save**. Click the toolbar ico
 npm run watch          # rebuild on change, then click ↻ on the extension card in chrome://extensions
 npm run typecheck
 npm test               # unit tests: SM-2, merging, CSV, sentence splitting, MyMemory parsing
-npm run package        # typecheck + test + build + zip → release/context-cards-<version>.zip
+npm run package        # typecheck + test + build + zip → release/wordharvest-<version>.zip
 npm run store-assets   # regenerate icons, screenshots and promo tile (uses your installed Chrome)
 ```
 
@@ -60,7 +60,7 @@ npm run store-assets   # regenerate icons, screenshots and promo tile (uses your
 | Import & export | JSON (lossless), CSV (one row per example sentence), and Anki CSV export. JSON and CSV import merges into existing cards. |
 | Settings | Target language, auto-save, translating example sentences, translation provider, and an optional MyMemory e-mail for a higher free quota. |
 
-**Importing into Anki (2.1.55+):** use *File → Import* and choose the exported `context-cards-anki-*.csv`. The file's header lines set the separator, the HTML option and the tags column. Choose the **Basic** note type.
+**Importing into Anki (2.1.55+):** use *File → Import* and choose the exported `wordharvest-anki-*.csv`. The file's header lines set the separator, the HTML option and the tags column. Choose the **Basic** note type.
 
 ## Architecture
 
@@ -186,7 +186,7 @@ The extension deliberately does **not** request these:
 
 ## Privacy
 
-Everything is stored locally. Text is sent to MyMemory only when the online fallback is used, and only the word or sentence being translated. See [`store/privacy-policy.md`](store/privacy-policy.md), published at https://talipturkmen.github.io/wordle/privacy-policy/.
+Everything is stored locally. Text is sent to MyMemory only when the online fallback is used, and only the word or sentence being translated. See [`store/privacy-policy.md`](store/privacy-policy.md), published at https://talipturkmen.github.io/wordharvest/privacy-policy/.
 
 ## Releasing a new version
 
@@ -200,7 +200,7 @@ Everything is stored locally. Text is sent to MyMemory only when the online fall
 
 3. [`.github/workflows/release.yml`](.github/workflows/release.yml) then:
    - checks that the tag matches the manifest version
-   - typechecks, tests and builds, and creates `context-cards-<version>.zip`
+   - typechecks, tests and builds, and creates `wordharvest-<version>.zip`
    - attaches the zip to a **GitHub Release**
    - uploads and publishes to the **Chrome Web Store**. This step is skipped with a notice if the `CWS_*` secrets aren't set.
 

@@ -19,7 +19,7 @@ export async function send<M extends Message>(msg: M): Promise<ResponseMap[M['ty
   } catch (err) {
     // Happens in tabs that were open while the extension was updated or reloaded.
     if (String(err).includes('Extension context invalidated')) {
-      throw new Error('Context Cards was updated. Reload this page to keep using it.');
+      throw new Error('WordHarvest was updated. Reload this page to keep using it.');
     }
     throw err;
   }

@@ -85,7 +85,7 @@ export class WordPopup {
 
   constructor(handlers: PopupHandlers, onClose: () => void) {
     this.onClose = onClose;
-    this.host = document.createElement('context-cards-popup');
+    this.host = document.createElement('wordharvest-popup');
     this.root = this.host.attachShadow({ mode: 'closed' });
     this.root.innerHTML = `
       <style>${CSS}</style>

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Context Cards: Learn Words While You Read",
-  "short_name": "Context Cards",
+  "name": "WordHarvest: Translate & Save Words as Flashcards",
+  "short_name": "WordHarvest",
   "version": "1.0.0",
   "description": "Double-click any word to translate it, save it with the sentence it came from, and review it later as flashcards.",
   "minimum_chrome_version": "116",
@@ -12,7 +12,7 @@
     "128": "icons/icon-128.png"
   },
   "action": {
-    "default_title": "Context Cards",
+    "default_title": "WordHarvest",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon-16.png",

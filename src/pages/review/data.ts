@@ -15,17 +15,17 @@ function setStatus(text: string, error = false): void {
 
 $('export-json').addEventListener('click', async () => {
   const cards = await getAllCards();
-  const doc = { format: 'context-cards', version: 1, exportedAt: new Date().toISOString(), cards };
-  download(`context-cards-${stamp()}.json`, JSON.stringify(doc, null, 2), 'application/json');
+  const doc = { format: 'wordharvest', version: 1, exportedAt: new Date().toISOString(), cards };
+  download(`wordharvest-${stamp()}.json`, JSON.stringify(doc, null, 2), 'application/json');
 });
 
 $('export-csv').addEventListener('click', async () => {
   // BOM so Excel opens UTF-8 correctly.
-  download(`context-cards-${stamp()}.csv`, '﻿' + cardsToCsv(await getAllCards()), 'text/csv;charset=utf-8');
+  download(`wordharvest-${stamp()}.csv`, '﻿' + cardsToCsv(await getAllCards()), 'text/csv;charset=utf-8');
 });
 
 $('export-anki').addEventListener('click', async () => {
-  download(`context-cards-anki-${stamp()}.csv`, cardsToAnkiCsv(await getAllCards()), 'text/csv;charset=utf-8');
+  download(`wordharvest-anki-${stamp()}.csv`, cardsToAnkiCsv(await getAllCards()), 'text/csv;charset=utf-8');
 });
 
 function parseFile(name: string, text: string): Card[] {

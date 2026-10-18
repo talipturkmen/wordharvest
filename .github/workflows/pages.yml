@@ -28,10 +28,10 @@ jobs:
         run: |
           mkdir -p site
           {
-            printf -- '---\ntitle: Privacy Policy – Context Cards\npermalink: /privacy-policy/\n---\n\n'
+            printf -- '---\ntitle: Privacy Policy – WordHarvest\npermalink: /privacy-policy/\n---\n\n'
             cat store/privacy-policy.md
           } > site/privacy-policy.md
-          printf -- '---\ntitle: Context Cards\n---\n\n# Context Cards\n\nA Chrome extension for learning vocabulary while you read.\n\n- [Privacy policy](privacy-policy/)\n- [Source code](https://github.com/%s)\n' \
+          printf -- '---\ntitle: WordHarvest\n---\n\n# WordHarvest\n\nA Chrome extension for learning vocabulary while you read.\n\n- [Privacy policy](privacy-policy/)\n- [Source code](https://github.com/%s)\n' \
             "$GITHUB_REPOSITORY" > site/index.md
       - uses: actions/configure-pages@v6
       - uses: actions/jekyll-build-pages@v1

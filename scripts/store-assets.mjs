@@ -124,7 +124,7 @@ console.log('screenshots ✓');
     mark { background: #fbbf24; color: #1f2330; border-radius: 4px; padding: 0 4px; }
   </style></head><body>
     ${iconSvg(104, { simple: false })}
-    <div><h1>Context Cards</h1><p>Double-click a <mark>word</mark>,<br>keep the sentence,<br>review it later.</p></div>
+    <div><h1>WordHarvest</h1><p>Double-click a <mark>word</mark>,<br>keep the sentence,<br>review it later.</p></div>
   </body></html>`);
   await page.screenshot({ path: out('store', 'promo-small-440x280.png') });
   await page.close();

@@ -1,8 +1,8 @@
-# Privacy Policy — Context Cards
+# Privacy Policy — WordHarvest
 
 _Last updated: October 18, 2026_
 
-Context Cards is a Chrome extension for learning vocabulary while you read. This policy explains what data the extension handles and where that data goes.
+WordHarvest is a Chrome extension for learning vocabulary while you read. This policy explains what data the extension handles and where that data goes.
 
 ## Summary
 
@@ -46,4 +46,4 @@ If this policy changes, the new version will be published at this address, with 
 
 ## Contact
 
-Questions or requests: open an issue at https://github.com/talipturkmen/wordle/issues.
+Questions or requests: open an issue at https://github.com/talipturkmen/wordharvest/issues.

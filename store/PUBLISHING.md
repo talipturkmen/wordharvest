@@ -22,14 +22,14 @@ The first upload must be done by hand: the Chrome Web Store API can update an ex
 ```bash
 npm ci
 npm run package         # typecheck + tests + build + zip
-# → release/context-cards-<version>.zip
+# → release/wordharvest-<version>.zip
 ```
 
 The zip contains the contents of `dist/`, with `manifest.json` at the root.
 
 ## 3. First manual upload
 
-1. In the dashboard, click **➕ New item** and upload `release/context-cards-1.0.0.zip`.
+1. In the dashboard, click **➕ New item** and upload `release/wordharvest-1.0.0.zip`.
 2. The item opens as a draft. Copy the **Item ID** (32 letters, also in the URL). This is `CWS_EXTENSION_ID`.
 
 ## 4. Store listing tab
@@ -56,7 +56,7 @@ Copy each answer from [`permissions-justification.md`](permissions-justification
 2. **Permission justification:** one text box per permission (`storage` and the host permissions).
 3. **Remote code:** "No, I am not using remote code".
 4. **Data usage:** check **Website content** only, then tick the three certifications.
-5. **Privacy policy URL:** `https://talipturkmen.github.io/wordle/privacy-policy/`. The `pages.yml` workflow publishes this page from `store/privacy-policy.md`; check that it loads before you submit.
+5. **Privacy policy URL:** `https://talipturkmen.github.io/wordharvest/privacy-policy/`. The `pages.yml` workflow publishes this page from `store/privacy-policy.md`; check that it loads before you submit.
 
 ## 6. Distribution tab
 
@@ -88,7 +88,7 @@ If any of these secrets is missing, the workflow still creates the GitHub Releas
 
 ### 8.1 Create a Google Cloud project and enable the API
 
-1. Open https://console.cloud.google.com/ and create a project, for example "context-cards-publish".
+1. Open https://console.cloud.google.com/ and create a project, for example "wordharvest-publish".
 2. Go to **APIs & Services → Library**, search for **Chrome Web Store API**, and click **Enable**.
 
 ### 8.2 Configure the OAuth consent screen

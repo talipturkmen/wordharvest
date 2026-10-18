@@ -40,7 +40,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" "release/context-cards-${{ steps.version.outputs.version }}.zip" \
+          gh release create "$GITHUB_REF_NAME" "release/wordharvest-${{ steps.version.outputs.version }}.zip" \
             --title "$GITHUB_REF_NAME" --generate-notes
 
       - name: Check Chrome Web Store credentials
@@ -72,4 +72,4 @@ jobs:
           CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
           REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
         # No sub-command = upload, then publish (the new version goes to review).
-        run: npx --yes chrome-webstore-upload-cli@4.0.2 --source "release/context-cards-${{ steps.version.outputs.version }}.zip"
+        run: npx --yes chrome-webstore-upload-cli@4.0.2 --source "release/wordharvest-${{ steps.version.outputs.version }}.zip"

@@ -48,5 +48,5 @@ test('Anki export has headers, escapes HTML and bolds the word', () => {
   const rows = parseCsv(out.split('\r\n').slice(4).join('\r\n'));
   assert.equal(rows[0]![0], '<b>chat</b><br><br>Le <b>chat</b> dort.');
   assert.equal(rows[0]![1], 'cat &lt;pet&gt;');
-  assert.equal(rows[0]![2], 'context-cards lang::fr');
+  assert.equal(rows[0]![2], 'wordharvest lang::fr');
 });
