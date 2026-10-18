@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Context Cards</title>
+  <link rel="icon" href="icons/icon-32.png">
+  <link rel="stylesheet" href="styles.css">
+  <script src="review.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <span class="brand"><img src="icons/icon-32.png" width="22" height="22" alt=""> Context Cards</span>
+    <nav class="tabs">
+      <a href="#review" data-view="review">Review</a>
+      <a href="#browse" data-view="browse">Browse</a>
+      <a href="#data" data-view="data">Import &amp; export</a>
+    </nav>
+    <span class="spacer"></span>
+    <a class="btn link" href="options.html">Settings</a>
+  </header>
+
+  <!-- Review -->
+  <main id="view-review" hidden>
+    <div class="progress"><span id="rv-left"></span><span id="rv-done"></span></div>
+
+    <div id="rv-empty" class="panel empty" hidden></div>
+
+    <article id="rv-card" class="flashcard" hidden>
+      <div class="term-row"><h1 id="rv-term" class="term"></h1><span id="rv-lang" class="badge"></span></div>
+      <p id="rv-sentence" class="sentence"></p>
+      <div id="rv-back" class="back" hidden>
+        <div id="rv-translation" class="translation"></div>
+        <p id="rv-sentence-tr" class="sentence-tr"></p>
+        <p id="rv-notes" class="notes"></p>
+        <p id="rv-source" class="source"></p>
+      </div>
+    </article>
+
+    <div id="rv-actions" class="actions" hidden>
+      <button id="rv-show" class="btn primary">Show answer <kbd>Space</kbd></button>
+      <div id="rv-grades" class="grades" hidden>
+        <button class="btn grade again" data-grade="again">Again <small></small></button>
+        <button class="btn grade hard" data-grade="hard">Hard <small></small></button>
+        <button class="btn grade good" data-grade="good">Good <small></small></button>
+        <button class="btn grade easy" data-grade="easy">Easy <small></small></button>
+      </div>
+    </div>
+    <div class="below"><button id="rv-edit" class="btn link" hidden>Edit card <kbd>E</kbd></button></div>
+  </main>
+
+  <!-- Browse -->
+  <main id="view-browse" hidden>
+    <div class="toolbar">
+      <input id="search" type="search" placeholder="Search words, translations and sentences…" autocomplete="off">
+      <select id="sort" aria-label="Sort by">
+        <option value="recent">Recently added</option>
+        <option value="alpha">A → Z</option>
+        <option value="due">Due date</option>
+      </select>
+      <span id="count" class="count"></span>
+    </div>
+    <ul id="card-list" class="card-list"></ul>
+    <button id="more" class="btn more" hidden>Show more</button>
+    <div id="browse-empty" class="panel empty" hidden></div>
+  </main>
+
+  <!-- Import & export -->
+  <main id="view-data" hidden>
+    <section class="panel">
+      <h2>Export</h2>
+      <p class="muted">JSON keeps everything (examples, sources, review progress) and can be imported back. CSV has one row per example sentence. The Anki file imports into Anki 2.1.55+ as “Basic” notes.</p>
+      <div class="row">
+        <button id="export-json" class="btn">Export JSON</button>
+        <button id="export-csv" class="btn">Export CSV</button>
+        <button id="export-anki" class="btn">Export for Anki</button>
+      </div>
+    </section>
+    <section class="panel">
+      <h2>Import</h2>
+      <p class="muted">Import a JSON or CSV file exported from Context Cards. Words you already have are merged: new example sentences are added, nothing is lost.</p>
+      <div class="row">
+        <label class="btn" for="import-file">Choose file…</label>
+        <input id="import-file" type="file" accept=".json,.csv,application/json,text/csv" hidden>
+      </div>
+      <p id="import-status" class="status" role="status"></p>
+    </section>
+    <section class="panel danger-zone">
+      <h2>Delete all cards</h2>
+      <p class="muted">Removes every saved word and its review history from this browser. Export first if you want a backup.</p>
+      <button id="delete-all" class="btn danger">Delete all cards…</button>
+    </section>
+  </main>
+
+  <dialog id="editor">
+    <form id="editor-form" method="dialog">
+      <h2>Edit card</h2>
+      <div class="grid2">
+        <label>Word <input type="text" name="term" required></label>
+        <label>Language <select name="lang"></select></label>
+      </div>
+      <label>Translation <input type="text" name="translation"></label>
+      <label>Notes <textarea name="notes" rows="2"></textarea></label>
+      <h3>Example sentences</h3>
+      <div id="ed-examples" class="card-list"></div>
+      <p id="ed-meta" class="muted"></p>
+      <div class="dialog-actions">
+        <button type="button" id="ed-delete" class="btn danger">Delete card</button>
+        <button type="button" id="ed-reset" class="btn">Reset progress</button>
+        <span class="spacer"></span>
+        <button type="button" id="ed-cancel" class="btn">Cancel</button>
+        <button type="submit" class="btn primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+</body>
+</html>

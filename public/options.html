@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Context Cards — Settings</title>
+  <link rel="icon" href="icons/icon-32.png">
+  <link rel="stylesheet" href="styles.css">
+  <script src="options.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <span class="brand"><img src="icons/icon-32.png" width="22" height="22" alt=""> Context Cards</span>
+    <nav class="tabs">
+      <a href="review.html#review">Review</a>
+      <a href="review.html#browse">Browse</a>
+      <a href="review.html#data">Import &amp; export</a>
+    </nav>
+  </header>
+  <main class="narrow">
+    <h1>Settings</h1>
+
+    <section class="panel">
+      <label class="field">Translate words into
+        <select id="targetLang"></select>
+      </label>
+      <label class="check"><input type="checkbox" id="autoSave">
+        <span>Save words automatically when I double-click them</span></label>
+      <label class="check"><input type="checkbox" id="translateSentences">
+        <span>Also translate the example sentence when saving</span></label>
+    </section>
+
+    <section class="panel">
+      <h2>Translation provider</h2>
+      <label class="radio"><input type="radio" name="provider" value="auto">
+        <span><b>Automatic</b> (recommended) — Chrome’s on-device translator; falls back to the online service (MyMemory) when a language pair isn’t available on-device.</span></label>
+      <label class="radio"><input type="radio" name="provider" value="builtin">
+        <span><b>On-device only</b> — nothing leaves your browser. Needs Chrome 138+ on desktop and a supported language pair.</span></label>
+      <label class="radio"><input type="radio" name="provider" value="remote">
+        <span><b>Online only</b> — always use MyMemory.</span></label>
+      <p id="builtin-status" class="muted"></p>
+
+      <label class="field">MyMemory e-mail (optional)
+        <input type="email" id="myMemoryEmail" placeholder="you@example.com" autocomplete="email">
+      </label>
+      <p class="muted">MyMemory allows about 5,000 characters a day anonymously and about 50,000 with an e-mail address. The address is only sent to MyMemory with translation requests.</p>
+    </section>
+
+    <p id="saved" class="saved" role="status"></p>
+  </main>
+</body>
+</html>
