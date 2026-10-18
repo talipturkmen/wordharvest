@@ -1,0 +1,18 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { margin: 0; height: 800px; display: flex; align-items: center; justify-content: center; gap: 56px;
+           font-family: system-ui, -apple-system, sans-serif; color: #fff;
+           background: linear-gradient(135deg, #6366f1, #3730a3); }
+    .col { display: flex; flex-direction: column; gap: 18px; }
+    h2 { margin: 0; font-size: 22px; font-weight: 650; opacity: .95; }
+    iframe { border: 0; border-radius: 14px; box-shadow: 0 24px 60px rgba(0,0,0,.35); background: #fff; }
+  </style>
+</head>
+<body>
+  <div class="col"><h2>Your progress at a glance</h2><iframe src="../../dist/popup.html" width="300" height="262"></iframe></div>
+  <div class="col"><h2>On-device translation, your language</h2><iframe src="../../dist/options.html" width="640" height="600"></iframe></div>
+</body>
+</html>
